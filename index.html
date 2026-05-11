@@ -1,0 +1,4203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>育児ネコ - 町田市版 子育て費用計算機 v8</title>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+
+// ========== ハンバーガーメニュー制御 ==========
+function openSideMenu() {
+  document.getElementById('sideMenu').classList.add('open');
+  document.getElementById('menuOverlay').classList.add('show');
+}
+
+function closeSideMenu() {
+  document.getElementById('sideMenu').classList.remove('open');
+  document.getElementById('menuOverlay').classList.remove('show');
+}
+
+document.getElementById('hamburgerBtn').addEventListener('click', openSideMenu);
+document.getElementById('menuCloseBtn').addEventListener('click', closeSideMenu);
+document.getElementById('menuOverlay').addEventListener('click', closeSideMenu);
+
+// ========== 補助金一覧ページ表示 ==========
+function showSubsidyList() {
+  closeSideMenu();
+  // 結果ビューを表示（補助金カードが含まれている）
+  document.getElementById('chatView').style.display = 'none';
+  document.getElementById('resultView').style.display = 'block';
+  
+  // スクロールして補助金カードセクションへ
+  setTimeout(() => {
+    const subsidySection = document.querySelector('.card-grid');
+    if (subsidySection) {
+      subsidySection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, 100);
+}
+
+// ========== Todoリストページ表示（仮実装） ==========
+function showTodoPage(pageType) {
+  closeSideMenu();
+  alert('Todoリスト「' + pageType + '」ページは次のPhaseで実装します');
+}
+
+// ========== 給付金ガイドページ表示（仮実装） ==========
+function showBenefitGuide() {
+  closeSideMenu();
+  alert('育休・産休給付金ガイドは次のPhaseで実装します');
+}
+
+
+// Todoリストのデータ定義
+const TODO_DATA = {
+  pregnancy_confirm: {
+    title: '妊娠時のtodoリスト',
+    subtitle: '妊娠が分かったらすぐにやること',
+    icon: '🤰',
+    todos: [
+      {
+        timing: '妊娠判明後すぐ',
+        task: '産婦人科を受診',
+        where: '産婦人科・クリニック',
+        documents: ['健康保険証', '身分証明書'],
+        notes: '妊娠検査薬で陽性が出たら、できるだけ早く受診しましょう',
+        links: []
+      },
+      {
+        timing: '妊娠8週まで',
+        task: '妊娠届出・母子健康手帳の交付',
+        where: '町田市保健所または地域担当窓口',
+        documents: ['妊娠届出書（病院でもらう）', '本人確認書類', 'マイナンバーカードor通知カード'],
+        notes: '妊婦健診の助成券もこのとき交付されます',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/ninshin/ninshin_todokede.html']
+      },
+      {
+        timing: '妊娠判明後1週間以内',
+        task: '会社への妊娠報告',
+        where: '勤務先（上司・人事部）',
+        documents: [],
+        notes: 'つわりや体調不良に備え、早めの報告が大切です',
+        links: []
+      },
+      {
+        timing: '妊娠初期',
+        task: '出産予定日の確認',
+        where: '産婦人科',
+        documents: [],
+        notes: '出産予定日により各種手続きのスケジュールが決まります',
+        links: []
+      },
+      {
+        timing: '妊娠初期',
+        task: '出産・育児にかかる費用の確認',
+        where: '自宅',
+        documents: [],
+        notes: '育児ネコの計算機で概算を確認しましょう',
+        links: []
+      },
+      {
+        timing: '妊娠初期',
+        task: '妊娠中の生活・食事の見直し',
+        where: '自宅',
+        documents: [],
+        notes: '葉酸サプリの摂取、アルコール・タバコの禁止など',
+        links: []
+      }
+    ]
+  },
+  
+  pregnancy: {
+    title: '妊娠中のtodoリスト',
+    subtitle: '妊娠中期〜後期にやること',
+    icon: '👶',
+    todos: [
+      {
+        timing: '妊娠20週〜24週',
+        task: '出産する病院の決定',
+        where: '産婦人科・産院',
+        documents: ['母子健康手帳', '健康保険証'],
+        notes: '人気の病院は早めに予約が必要です',
+        links: []
+      },
+      {
+        timing: '妊娠20週〜28週',
+        task: '出産・子育て応援ギフト（妊婦面談）',
+        where: '町田市保健所または地域担当窓口',
+        documents: ['母子健康手帳', '本人確認書類', '振込口座がわかるもの'],
+        notes: '面談後、5万円分のギフト（電子クーポンor現金）が支給されます',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/ninshin/oen-gift.html']
+      },
+      {
+        timing: '妊娠中期〜後期',
+        task: '定期妊婦健診の受診',
+        where: '産婦人科',
+        documents: ['母子健康手帳', '妊婦健診補助券', '健康保険証'],
+        notes: '町田市では約28万円分の健診費用助成があります',
+        links: []
+      },
+      {
+        timing: '妊娠24週〜28週',
+        task: '両親学級・母親学級の参加検討',
+        where: '町田市保健所・産院など',
+        documents: ['母子健康手帳'],
+        notes: '出産・育児の知識を学べます',
+        links: []
+      },
+      {
+        timing: '妊娠28週まで',
+        task: '出生前診断の検討（希望者のみ）',
+        where: '産婦人科',
+        documents: [],
+        notes: '希望する場合は医師と相談',
+        links: []
+      },
+      {
+        timing: '妊娠中期〜後期',
+        task: '育児用品の準備開始',
+        where: '自宅・店舗・オンライン',
+        documents: [],
+        notes: 'ベビーベッド、ベビー服、おむつなど',
+        links: []
+      },
+      {
+        timing: '妊娠後期',
+        task: '里帰り出産の準備（該当者のみ）',
+        where: '実家・里帰り先の産院',
+        documents: ['母子健康手帳', '健康保険証', '妊婦健診の記録'],
+        notes: '里帰り先の産院への転院手続きも必要',
+        links: []
+      }
+    ]
+  },
+  
+  before_birth: {
+    title: '出産前のtodoリスト',
+    subtitle: '出産予定日の1〜2ヶ月前にやること',
+    icon: '🏥',
+    todos: [
+      {
+        timing: '出産予定日の1ヶ月前',
+        task: '産休の申請（ママ・会社員の場合）',
+        where: '勤務先（人事部）',
+        documents: ['産前産後休業申請書（会社指定の書式）'],
+        notes: '産前6週間（多胎妊娠は14週間）から取得可能',
+        links: []
+      },
+      {
+        timing: '出産予定日の1ヶ月前',
+        task: '育休の申請（ママ・会社員の場合）',
+        where: '勤務先（人事部）',
+        documents: ['育児休業申出書（会社指定の書式）'],
+        notes: '産休終了後から最長2年間取得可能',
+        links: []
+      },
+      {
+        timing: '出産予定日の1ヶ月前',
+        task: '入院準備・バッグのパッキング',
+        where: '自宅',
+        documents: [],
+        notes: '母子健康手帳、健康保険証、診察券、入院着、洗面用具など',
+        links: []
+      },
+      {
+        timing: '出産予定日の2週間前',
+        task: '陣痛タクシー・緊急連絡先の登録',
+        where: '自宅',
+        documents: [],
+        notes: '深夜・早朝の陣痛に備えて登録しておきましょう',
+        links: []
+      },
+      {
+        timing: '出産前',
+        task: 'ベビーベッド・ベビー服の最終確認',
+        where: '自宅',
+        documents: [],
+        notes: '退院後すぐに使うものを優先的に準備',
+        links: []
+      },
+      {
+        timing: '出産前',
+        task: '家族・親族への連絡体制の確認',
+        where: '自宅',
+        documents: [],
+        notes: '出産時の連絡先リストを作成',
+        links: []
+      },
+      {
+        timing: '出産予定日の1〜2週間前',
+        task: 'パパの育休申請（希望する場合）',
+        where: '勤務先（人事部）',
+        documents: ['育児休業申出書（会社指定の書式）'],
+        notes: '出生後8週間以内に最大28日間の産後パパ育休を取得可能',
+        links: []
+      }
+    ]
+  },
+  
+  after_birth: {
+    title: '出産後のtodoリスト',
+    subtitle: '出産後14日以内 & 1〜2ヶ月以内にやること',
+    icon: '👶',
+    todos: [
+      {
+        timing: '出生後14日以内',
+        task: '出生届の提出',
+        where: '町田市役所 市民課または各市民センター',
+        documents: ['出生届（病院でもらう）', '母子健康手帳', '届出人の本人確認書類・印鑑'],
+        notes: '出生地・本籍地・住所地のいずれかで提出可',
+        links: ['https://www.city.machida.tokyo.jp/shisei/koseki/todokede/shussho.html']
+      },
+      {
+        timing: '出生後14日以内',
+        task: '健康保険への加入',
+        where: '勤務先（健康保険組合）or 町田市役所（国民健康保険）',
+        documents: ['出生届の記載事項証明書or母子健康手帳', '健康保険証', '印鑑'],
+        notes: '赤ちゃんの健康保険証を早めに取得',
+        links: []
+      },
+      {
+        timing: '出生後1ヶ月以内',
+        task: '児童手当の申請',
+        where: '町田市役所 子ども総務課または各市民センター',
+        documents: ['児童手当認定請求書', '申請者の健康保険証コピー', '申請者名義の口座番号がわかるもの', '申請者・配偶者のマイナンバーがわかるもの'],
+        notes: '出生日の翌日から15日以内に申請すれば出生月から支給',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/teate/jidouteate/jidouteate_moushikomi.html']
+      },
+      {
+        timing: '出生後1ヶ月以内',
+        task: '出産育児一時金の申請',
+        where: '健康保険組合or町田市役所（国民健康保険）',
+        documents: ['出産育児一時金支給申請書', '医療機関の領収書・明細書', '母子健康手帳', '健康保険証', '振込口座がわかるもの'],
+        notes: '1児につき50万円（2023年4月以降）が支給されます',
+        links: []
+      },
+      {
+        timing: '出生後1〜2ヶ月',
+        task: '出産・子育て応援ギフト（新生児面談）',
+        where: '町田市保健所または訪問（こんにちは赤ちゃん訪問）',
+        documents: ['母子健康手帳', '本人確認書類', '振込口座がわかるもの'],
+        notes: '面談後、10万円分のギフト（電子クーポンor現金）が支給されます',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/ninshin/oen-gift.html']
+      },
+      {
+        timing: '産休終了後57日目以降',
+        task: '出産手当金の申請（ママ・会社員の場合）',
+        where: '健康保険組合（会社経由）',
+        documents: ['出産手当金支給申請書（健康保険組合指定）', '出勤簿または賃金台帳のコピー', '医師または助産師の証明', '事業主の証明'],
+        notes: '産前42日+産後56日（計98日分）の約3分の2が支給されます',
+        links: []
+      },
+      {
+        timing: '育休開始から4ヶ月後以降',
+        task: '育児休業給付金の初回申請（ママ・会社員の場合）',
+        where: 'ハローワーク（通常は会社経由）',
+        documents: ['育児休業給付金支給申請書', '母子健康手帳のコピー', '賃金台帳・出勤簿のコピー', '雇用保険被保険者証のコピー'],
+        notes: '最初の180日間は休業開始時賃金の67%、以降50%が2ヶ月ごとに支給されます',
+        links: []
+      },
+      {
+        timing: '出生後8週間以内',
+        task: 'パパの産後パパ育休給付金の申請（会社員の場合）',
+        where: 'ハローワーク（通常は会社経由）',
+        documents: ['出生時育児休業給付金支給申請書', '母子健康手帳のコピー', '賃金台帳・出勤簿のコピー', '雇用保険被保険者証のコピー'],
+        notes: '14日以上取得で手取り10割相当（67%+13%）の給付金',
+        links: []
+      },
+      {
+        timing: '出産後早めに',
+        task: '各種育児サービスへの登録',
+        where: 'オンライン・自宅',
+        documents: [],
+        notes: '町田市の子育てひろば、一時保育、ファミリーサポートなど',
+        links: ['https://kosodate-machida.tokyo.jp/']
+      }
+    ]
+  },
+  
+  year1: {
+    title: '1年目のtodoリスト',
+    subtitle: '生後1ヶ月〜1歳までにやること',
+    icon: '🍼',
+    todos: [
+      {
+        timing: '生後1ヶ月',
+        task: '1ヶ月健診の受診',
+        where: '産婦人科・小児科',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証'],
+        notes: 'ママと赤ちゃん両方の健診があります',
+        links: []
+      },
+      {
+        timing: '生後2ヶ月〜',
+        task: '予防接種のスケジュール確認・接種開始',
+        where: '小児科・保健所',
+        documents: ['母子健康手帳', '予防接種予診票', '健康保険証', '乳幼児医療証'],
+        notes: 'B型肝炎、ロタウイルス、ヒブ、小児用肺炎球菌など複数あります',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/yobousesshu/yobousesshu.html']
+      },
+      {
+        timing: '生後3〜4ヶ月',
+        task: '3〜4ヶ月健診',
+        where: '町田市指定医療機関',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証', '受診票（郵送されます）'],
+        notes: '無料健診です',
+        links: []
+      },
+      {
+        timing: '生後6ヶ月頃',
+        task: '離乳食の開始',
+        where: '自宅',
+        documents: [],
+        notes: '5〜6ヶ月頃から開始、少しずつ慣らしていきましょう',
+        links: []
+      },
+      {
+        timing: '生後6ヶ月〜8ヶ月',
+        task: '保育園入園の検討・見学',
+        where: '各保育園・町田市保育課',
+        documents: [],
+        notes: '翌年4月入園希望の場合、秋頃から申込開始',
+        links: ['https://kosodate-machida.tokyo.jp/soshiki/4/3/4/350.html']
+      },
+      {
+        timing: '生後9〜10ヶ月',
+        task: '9〜10ヶ月健診',
+        where: '町田市指定医療機関',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証', '受診票'],
+        notes: '無料健診です',
+        links: []
+      },
+      {
+        timing: '1歳の誕生日前',
+        task: '育児休業の延長手続き（1歳6ヶ月まで延長する場合）',
+        where: '勤務先・ハローワーク',
+        documents: ['保育所入所不承諾通知書など', '育児休業給付金支給申請書（延長用）'],
+        notes: '保育園に入れない等の理由がある場合、最長2歳まで延長可能',
+        links: []
+      },
+      {
+        timing: '1歳の誕生日',
+        task: '1歳のお誕生日祝い',
+        where: '自宅・フォトスタジオなど',
+        documents: [],
+        notes: '一升餅や選び取りなどの伝統行事も',
+        links: []
+      }
+    ]
+  },
+  
+  year2: {
+    title: '2年目のtodoリスト',
+    subtitle: '1歳〜2歳までにやること',
+    icon: '👧',
+    todos: [
+      {
+        timing: '1歳0ヶ月〜',
+        task: '追加の予防接種',
+        where: '小児科',
+        documents: ['母子健康手帳', '予防接種予診票', '健康保険証', '乳幼児医療証'],
+        notes: 'MR（麻疹・風疹）、水痘、おたふくかぜなど',
+        links: []
+      },
+      {
+        timing: '1歳6ヶ月',
+        task: '1歳6ヶ月健診',
+        where: '町田市保健所または指定医療機関',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証', '受診票'],
+        notes: '無料健診です。歯科健診も含まれます',
+        links: []
+      },
+      {
+        timing: '1歳6ヶ月の誕生日前',
+        task: '育児休業の延長手続き（2歳まで延長する場合）',
+        where: '勤務先・ハローワーク',
+        documents: ['保育所入所不承諾通知書など', '育児休業給付金支給申請書（延長用）'],
+        notes: '保育園に入れない等の理由がある場合、2歳まで延長可能',
+        links: []
+      },
+      {
+        timing: '1歳〜2歳',
+        task: '保育園・幼稚園入園の申し込み',
+        where: '町田市保育課・各園',
+        documents: ['保育所入所申込書', '就労証明書', '世帯全員の住民票など'],
+        notes: '4月入園の場合、前年の秋頃に申込',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/hoikuen/hoikuen_index.html']
+      },
+      {
+        timing: '1歳〜2歳',
+        task: '子育てひろば・親子教室の利用',
+        where: '町田市内の子どもセンター・子育てひろばなど',
+        documents: [],
+        notes: '無料で利用できる施設が多数あります',
+        links: ['https://kosodate-machida.tokyo.jp/soshiki/4/2/10/507.html']
+      },
+      {
+        timing: '2歳頃',
+        task: 'イヤイヤ期への対応',
+        where: '自宅・育児相談窓口',
+        documents: [],
+        notes: '個人差がありますが、2歳前後に訪れることが多いです',
+        links: []
+      },
+      {
+        timing: '2歳頃',
+        task: 'トイレトレーニングの開始',
+        where: '自宅',
+        documents: [],
+        notes: '焦らず、子どものペースで進めましょう',
+        links: []
+      },
+      {
+        timing: '2歳の誕生日',
+        task: '2歳のお誕生日祝い',
+        where: '自宅・フォトスタジオなど',
+        documents: [],
+        notes: '成長を記録に残しましょう',
+        links: []
+      },
+      {
+        timing: '2歳〜',
+        task: '職場復帰の準備',
+        where: '勤務先・自宅',
+        documents: [],
+        notes: '復帰日の確認、保育園の慣らし保育、病児保育の登録など',
+        links: []
+      }
+    ]
+  }
+};
+
+
+
+// ========== Todoページ表示 ==========
+function showTodoPage(pageType) {
+  closeSideMenu();
+  
+  const todoData = TODO_DATA[pageType];
+  if (!todoData) {
+    alert('該当のtodoリストが見つかりません');
+    return;
+  }
+  
+  // ヘッダー情報を設定
+  document.getElementById('todoPageIcon').textContent = todoData.icon;
+  document.getElementById('todoPageTitle').textContent = todoData.title;
+  document.getElementById('todoPageSubtitle').textContent = todoData.subtitle;
+  
+  // Todoリストをレンダリング
+  const container = document.getElementById('todoListContainer');
+  container.innerHTML = '';
+  
+  todoData.todos.forEach(todo => {
+    const todoItem = document.createElement('div');
+    todoItem.className = 'todo-item';
+    
+    let html = `
+      <div class="todo-timing">${todo.timing}</div>
+      <div class="todo-task">${todo.task}</div>
+      <div class="todo-detail">
+        <span class="todo-detail-label">📍 提出先:</span>${todo.where}
+      </div>
+    `;
+    
+    if (todo.documents && todo.documents.length > 0) {
+      html += `
+        <div class="todo-documents">
+          <span class="todo-detail-label">📄 必要書類:</span><br>
+          ${todo.documents.map(doc => `・${doc}`).join('<br>')}
+        </div>
+      `;
+    }
+    
+    if (todo.notes) {
+      html += `
+        <div class="todo-notes">
+          <span class="todo-detail-label">💡 メモ:</span> ${todo.notes}
+        </div>
+      `;
+    }
+    
+    if (todo.links && todo.links.length > 0) {
+      html += `
+        <div class="todo-links">
+          ${todo.links.map(link => `<a href="${link}" class="todo-link" target="_blank">詳細を見る</a>`).join('')}
+        </div>
+      `;
+    }
+    
+    todoItem.innerHTML = html;
+    container.appendChild(todoItem);
+  });
+  
+  // チャット画面・結果画面を非表示
+  document.getElementById('chatView').style.display = 'none';
+  document.getElementById('resultView').style.display = 'none';
+  
+  // Todoページを表示
+  document.getElementById('todoPage').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ========== 給付金ガイドページ表示 ==========
+function showBenefitGuide() {
+  closeSideMenu();
+  
+  // チャット画面・結果画面を非表示
+  document.getElementById('chatView').style.display = 'none';
+  document.getElementById('resultView').style.display = 'none';
+  
+  // 給付金ガイドページを表示
+  document.getElementById('benefitGuidePage').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ========== ページを閉じる ==========
+function hidePage() {
+  // すべての情報ページを非表示
+  document.getElementById('todoPage').classList.remove('active');
+  document.getElementById('benefitGuidePage').classList.remove('active');
+  
+  // チャット画面に戻る
+  document.getElementById('chatView').style.display = 'block';
+  document.getElementById('resultView').style.display = 'none';
+  window.scrollTo(0, 0);
+}
+
+</script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+
+// ========== ハンバーガーメニュー制御 ==========
+function openSideMenu() {
+  document.getElementById('sideMenu').classList.add('open');
+  document.getElementById('menuOverlay').classList.add('show');
+}
+
+function closeSideMenu() {
+  document.getElementById('sideMenu').classList.remove('open');
+  document.getElementById('menuOverlay').classList.remove('show');
+}
+
+document.getElementById('hamburgerBtn').addEventListener('click', openSideMenu);
+document.getElementById('menuCloseBtn').addEventListener('click', closeSideMenu);
+document.getElementById('menuOverlay').addEventListener('click', closeSideMenu);
+
+// ========== 補助金一覧ページ表示 ==========
+function showSubsidyList() {
+  closeSideMenu();
+  // 結果ビューを表示（補助金カードが含まれている）
+  document.getElementById('chatView').style.display = 'none';
+  document.getElementById('resultView').style.display = 'block';
+  
+  // スクロールして補助金カードセクションへ
+  setTimeout(() => {
+    const subsidySection = document.querySelector('.card-grid');
+    if (subsidySection) {
+      subsidySection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, 100);
+}
+
+// ========== Todoリストページ表示（仮実装） ==========
+function showTodoPage(pageType) {
+  closeSideMenu();
+  alert('Todoリスト「' + pageType + '」ページは次のPhaseで実装します');
+}
+
+// ========== 給付金ガイドページ表示（仮実装） ==========
+function showBenefitGuide() {
+  closeSideMenu();
+  alert('育休・産休給付金ガイドは次のPhaseで実装します');
+}
+
+
+// Todoリストのデータ定義
+const TODO_DATA = {
+  pregnancy_confirm: {
+    title: '妊娠時のtodoリスト',
+    subtitle: '妊娠が分かったらすぐにやること',
+    icon: '🤰',
+    todos: [
+      {
+        timing: '妊娠判明後すぐ',
+        task: '産婦人科を受診',
+        where: '産婦人科・クリニック',
+        documents: ['健康保険証', '身分証明書'],
+        notes: '妊娠検査薬で陽性が出たら、できるだけ早く受診しましょう',
+        links: []
+      },
+      {
+        timing: '妊娠8週まで',
+        task: '妊娠届出・母子健康手帳の交付',
+        where: '町田市保健所または地域担当窓口',
+        documents: ['妊娠届出書（病院でもらう）', '本人確認書類', 'マイナンバーカードor通知カード'],
+        notes: '妊婦健診の助成券もこのとき交付されます',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/ninshin/ninshin_todokede.html']
+      },
+      {
+        timing: '妊娠判明後1週間以内',
+        task: '会社への妊娠報告',
+        where: '勤務先（上司・人事部）',
+        documents: [],
+        notes: 'つわりや体調不良に備え、早めの報告が大切です',
+        links: []
+      },
+      {
+        timing: '妊娠初期',
+        task: '出産予定日の確認',
+        where: '産婦人科',
+        documents: [],
+        notes: '出産予定日により各種手続きのスケジュールが決まります',
+        links: []
+      },
+      {
+        timing: '妊娠初期',
+        task: '出産・育児にかかる費用の確認',
+        where: '自宅',
+        documents: [],
+        notes: '育児ネコの計算機で概算を確認しましょう',
+        links: []
+      },
+      {
+        timing: '妊娠初期',
+        task: '妊娠中の生活・食事の見直し',
+        where: '自宅',
+        documents: [],
+        notes: '葉酸サプリの摂取、アルコール・タバコの禁止など',
+        links: []
+      }
+    ]
+  },
+  
+  pregnancy: {
+    title: '妊娠中のtodoリスト',
+    subtitle: '妊娠中期〜後期にやること',
+    icon: '👶',
+    todos: [
+      {
+        timing: '妊娠20週〜24週',
+        task: '出産する病院の決定',
+        where: '産婦人科・産院',
+        documents: ['母子健康手帳', '健康保険証'],
+        notes: '人気の病院は早めに予約が必要です',
+        links: []
+      },
+      {
+        timing: '妊娠20週〜28週',
+        task: '出産・子育て応援ギフト（妊婦面談）',
+        where: '町田市保健所または地域担当窓口',
+        documents: ['母子健康手帳', '本人確認書類', '振込口座がわかるもの'],
+        notes: '面談後、5万円分のギフト（電子クーポンor現金）が支給されます',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/ninshin/oen-gift.html']
+      },
+      {
+        timing: '妊娠中期〜後期',
+        task: '定期妊婦健診の受診',
+        where: '産婦人科',
+        documents: ['母子健康手帳', '妊婦健診補助券', '健康保険証'],
+        notes: '町田市では約28万円分の健診費用助成があります',
+        links: []
+      },
+      {
+        timing: '妊娠24週〜28週',
+        task: '両親学級・母親学級の参加検討',
+        where: '町田市保健所・産院など',
+        documents: ['母子健康手帳'],
+        notes: '出産・育児の知識を学べます',
+        links: []
+      },
+      {
+        timing: '妊娠28週まで',
+        task: '出生前診断の検討（希望者のみ）',
+        where: '産婦人科',
+        documents: [],
+        notes: '希望する場合は医師と相談',
+        links: []
+      },
+      {
+        timing: '妊娠中期〜後期',
+        task: '育児用品の準備開始',
+        where: '自宅・店舗・オンライン',
+        documents: [],
+        notes: 'ベビーベッド、ベビー服、おむつなど',
+        links: []
+      },
+      {
+        timing: '妊娠後期',
+        task: '里帰り出産の準備（該当者のみ）',
+        where: '実家・里帰り先の産院',
+        documents: ['母子健康手帳', '健康保険証', '妊婦健診の記録'],
+        notes: '里帰り先の産院への転院手続きも必要',
+        links: []
+      }
+    ]
+  },
+  
+  before_birth: {
+    title: '出産前のtodoリスト',
+    subtitle: '出産予定日の1〜2ヶ月前にやること',
+    icon: '🏥',
+    todos: [
+      {
+        timing: '出産予定日の1ヶ月前',
+        task: '産休の申請（ママ・会社員の場合）',
+        where: '勤務先（人事部）',
+        documents: ['産前産後休業申請書（会社指定の書式）'],
+        notes: '産前6週間（多胎妊娠は14週間）から取得可能',
+        links: []
+      },
+      {
+        timing: '出産予定日の1ヶ月前',
+        task: '育休の申請（ママ・会社員の場合）',
+        where: '勤務先（人事部）',
+        documents: ['育児休業申出書（会社指定の書式）'],
+        notes: '産休終了後から最長2年間取得可能',
+        links: []
+      },
+      {
+        timing: '出産予定日の1ヶ月前',
+        task: '入院準備・バッグのパッキング',
+        where: '自宅',
+        documents: [],
+        notes: '母子健康手帳、健康保険証、診察券、入院着、洗面用具など',
+        links: []
+      },
+      {
+        timing: '出産予定日の2週間前',
+        task: '陣痛タクシー・緊急連絡先の登録',
+        where: '自宅',
+        documents: [],
+        notes: '深夜・早朝の陣痛に備えて登録しておきましょう',
+        links: []
+      },
+      {
+        timing: '出産前',
+        task: 'ベビーベッド・ベビー服の最終確認',
+        where: '自宅',
+        documents: [],
+        notes: '退院後すぐに使うものを優先的に準備',
+        links: []
+      },
+      {
+        timing: '出産前',
+        task: '家族・親族への連絡体制の確認',
+        where: '自宅',
+        documents: [],
+        notes: '出産時の連絡先リストを作成',
+        links: []
+      },
+      {
+        timing: '出産予定日の1〜2週間前',
+        task: 'パパの育休申請（希望する場合）',
+        where: '勤務先（人事部）',
+        documents: ['育児休業申出書（会社指定の書式）'],
+        notes: '出生後8週間以内に最大28日間の産後パパ育休を取得可能',
+        links: []
+      }
+    ]
+  },
+  
+  after_birth: {
+    title: '出産後のtodoリスト',
+    subtitle: '出産後14日以内 & 1〜2ヶ月以内にやること',
+    icon: '👶',
+    todos: [
+      {
+        timing: '出生後14日以内',
+        task: '出生届の提出',
+        where: '町田市役所 市民課または各市民センター',
+        documents: ['出生届（病院でもらう）', '母子健康手帳', '届出人の本人確認書類・印鑑'],
+        notes: '出生地・本籍地・住所地のいずれかで提出可',
+        links: ['https://www.city.machida.tokyo.jp/shisei/koseki/todokede/shussho.html']
+      },
+      {
+        timing: '出生後14日以内',
+        task: '健康保険への加入',
+        where: '勤務先（健康保険組合）or 町田市役所（国民健康保険）',
+        documents: ['出生届の記載事項証明書or母子健康手帳', '健康保険証', '印鑑'],
+        notes: '赤ちゃんの健康保険証を早めに取得',
+        links: []
+      },
+      {
+        timing: '出生後1ヶ月以内',
+        task: '児童手当の申請',
+        where: '町田市役所 子ども総務課または各市民センター',
+        documents: ['児童手当認定請求書', '申請者の健康保険証コピー', '申請者名義の口座番号がわかるもの', '申請者・配偶者のマイナンバーがわかるもの'],
+        notes: '出生日の翌日から15日以内に申請すれば出生月から支給',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/teate/jidouteate/jidouteate_moushikomi.html']
+      },
+      {
+        timing: '出生後1ヶ月以内',
+        task: '出産育児一時金の申請',
+        where: '健康保険組合or町田市役所（国民健康保険）',
+        documents: ['出産育児一時金支給申請書', '医療機関の領収書・明細書', '母子健康手帳', '健康保険証', '振込口座がわかるもの'],
+        notes: '1児につき50万円（2023年4月以降）が支給されます',
+        links: []
+      },
+      {
+        timing: '出生後1〜2ヶ月',
+        task: '出産・子育て応援ギフト（新生児面談）',
+        where: '町田市保健所または訪問（こんにちは赤ちゃん訪問）',
+        documents: ['母子健康手帳', '本人確認書類', '振込口座がわかるもの'],
+        notes: '面談後、10万円分のギフト（電子クーポンor現金）が支給されます',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/ninshin/oen-gift.html']
+      },
+      {
+        timing: '産休終了後57日目以降',
+        task: '出産手当金の申請（ママ・会社員の場合）',
+        where: '健康保険組合（会社経由）',
+        documents: ['出産手当金支給申請書（健康保険組合指定）', '出勤簿または賃金台帳のコピー', '医師または助産師の証明', '事業主の証明'],
+        notes: '産前42日+産後56日（計98日分）の約3分の2が支給されます',
+        links: []
+      },
+      {
+        timing: '育休開始から4ヶ月後以降',
+        task: '育児休業給付金の初回申請（ママ・会社員の場合）',
+        where: 'ハローワーク（通常は会社経由）',
+        documents: ['育児休業給付金支給申請書', '母子健康手帳のコピー', '賃金台帳・出勤簿のコピー', '雇用保険被保険者証のコピー'],
+        notes: '最初の180日間は休業開始時賃金の67%、以降50%が2ヶ月ごとに支給されます',
+        links: []
+      },
+      {
+        timing: '出生後8週間以内',
+        task: 'パパの産後パパ育休給付金の申請（会社員の場合）',
+        where: 'ハローワーク（通常は会社経由）',
+        documents: ['出生時育児休業給付金支給申請書', '母子健康手帳のコピー', '賃金台帳・出勤簿のコピー', '雇用保険被保険者証のコピー'],
+        notes: '14日以上取得で手取り10割相当（67%+13%）の給付金',
+        links: []
+      },
+      {
+        timing: '出産後早めに',
+        task: '各種育児サービスへの登録',
+        where: 'オンライン・自宅',
+        documents: [],
+        notes: '町田市の子育てひろば、一時保育、ファミリーサポートなど',
+        links: ['https://kosodate-machida.tokyo.jp/']
+      }
+    ]
+  },
+  
+  year1: {
+    title: '1年目のtodoリスト',
+    subtitle: '生後1ヶ月〜1歳までにやること',
+    icon: '🍼',
+    todos: [
+      {
+        timing: '生後1ヶ月',
+        task: '1ヶ月健診の受診',
+        where: '産婦人科・小児科',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証'],
+        notes: 'ママと赤ちゃん両方の健診があります',
+        links: []
+      },
+      {
+        timing: '生後2ヶ月〜',
+        task: '予防接種のスケジュール確認・接種開始',
+        where: '小児科・保健所',
+        documents: ['母子健康手帳', '予防接種予診票', '健康保険証', '乳幼児医療証'],
+        notes: 'B型肝炎、ロタウイルス、ヒブ、小児用肺炎球菌など複数あります',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/yobousesshu/yobousesshu.html']
+      },
+      {
+        timing: '生後3〜4ヶ月',
+        task: '3〜4ヶ月健診',
+        where: '町田市指定医療機関',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証', '受診票（郵送されます）'],
+        notes: '無料健診です',
+        links: []
+      },
+      {
+        timing: '生後6ヶ月頃',
+        task: '離乳食の開始',
+        where: '自宅',
+        documents: [],
+        notes: '5〜6ヶ月頃から開始、少しずつ慣らしていきましょう',
+        links: []
+      },
+      {
+        timing: '生後6ヶ月〜8ヶ月',
+        task: '保育園入園の検討・見学',
+        where: '各保育園・町田市保育課',
+        documents: [],
+        notes: '翌年4月入園希望の場合、秋頃から申込開始',
+        links: ['https://kosodate-machida.tokyo.jp/soshiki/4/3/4/350.html']
+      },
+      {
+        timing: '生後9〜10ヶ月',
+        task: '9〜10ヶ月健診',
+        where: '町田市指定医療機関',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証', '受診票'],
+        notes: '無料健診です',
+        links: []
+      },
+      {
+        timing: '1歳の誕生日前',
+        task: '育児休業の延長手続き（1歳6ヶ月まで延長する場合）',
+        where: '勤務先・ハローワーク',
+        documents: ['保育所入所不承諾通知書など', '育児休業給付金支給申請書（延長用）'],
+        notes: '保育園に入れない等の理由がある場合、最長2歳まで延長可能',
+        links: []
+      },
+      {
+        timing: '1歳の誕生日',
+        task: '1歳のお誕生日祝い',
+        where: '自宅・フォトスタジオなど',
+        documents: [],
+        notes: '一升餅や選び取りなどの伝統行事も',
+        links: []
+      }
+    ]
+  },
+  
+  year2: {
+    title: '2年目のtodoリスト',
+    subtitle: '1歳〜2歳までにやること',
+    icon: '👧',
+    todos: [
+      {
+        timing: '1歳0ヶ月〜',
+        task: '追加の予防接種',
+        where: '小児科',
+        documents: ['母子健康手帳', '予防接種予診票', '健康保険証', '乳幼児医療証'],
+        notes: 'MR（麻疹・風疹）、水痘、おたふくかぜなど',
+        links: []
+      },
+      {
+        timing: '1歳6ヶ月',
+        task: '1歳6ヶ月健診',
+        where: '町田市保健所または指定医療機関',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証', '受診票'],
+        notes: '無料健診です。歯科健診も含まれます',
+        links: []
+      },
+      {
+        timing: '1歳6ヶ月の誕生日前',
+        task: '育児休業の延長手続き（2歳まで延長する場合）',
+        where: '勤務先・ハローワーク',
+        documents: ['保育所入所不承諾通知書など', '育児休業給付金支給申請書（延長用）'],
+        notes: '保育園に入れない等の理由がある場合、2歳まで延長可能',
+        links: []
+      },
+      {
+        timing: '1歳〜2歳',
+        task: '保育園・幼稚園入園の申し込み',
+        where: '町田市保育課・各園',
+        documents: ['保育所入所申込書', '就労証明書', '世帯全員の住民票など'],
+        notes: '4月入園の場合、前年の秋頃に申込',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/hoikuen/hoikuen_index.html']
+      },
+      {
+        timing: '1歳〜2歳',
+        task: '子育てひろば・親子教室の利用',
+        where: '町田市内の子どもセンター・子育てひろばなど',
+        documents: [],
+        notes: '無料で利用できる施設が多数あります',
+        links: ['https://kosodate-machida.tokyo.jp/soshiki/4/2/10/507.html']
+      },
+      {
+        timing: '2歳頃',
+        task: 'イヤイヤ期への対応',
+        where: '自宅・育児相談窓口',
+        documents: [],
+        notes: '個人差がありますが、2歳前後に訪れることが多いです',
+        links: []
+      },
+      {
+        timing: '2歳頃',
+        task: 'トイレトレーニングの開始',
+        where: '自宅',
+        documents: [],
+        notes: '焦らず、子どものペースで進めましょう',
+        links: []
+      },
+      {
+        timing: '2歳の誕生日',
+        task: '2歳のお誕生日祝い',
+        where: '自宅・フォトスタジオなど',
+        documents: [],
+        notes: '成長を記録に残しましょう',
+        links: []
+      },
+      {
+        timing: '2歳〜',
+        task: '職場復帰の準備',
+        where: '勤務先・自宅',
+        documents: [],
+        notes: '復帰日の確認、保育園の慣らし保育、病児保育の登録など',
+        links: []
+      }
+    ]
+  }
+};
+
+
+
+// ========== Todoページ表示 ==========
+function showTodoPage(pageType) {
+  closeSideMenu();
+  
+  const todoData = TODO_DATA[pageType];
+  if (!todoData) {
+    alert('該当のtodoリストが見つかりません');
+    return;
+  }
+  
+  // ヘッダー情報を設定
+  document.getElementById('todoPageIcon').textContent = todoData.icon;
+  document.getElementById('todoPageTitle').textContent = todoData.title;
+  document.getElementById('todoPageSubtitle').textContent = todoData.subtitle;
+  
+  // Todoリストをレンダリング
+  const container = document.getElementById('todoListContainer');
+  container.innerHTML = '';
+  
+  todoData.todos.forEach(todo => {
+    const todoItem = document.createElement('div');
+    todoItem.className = 'todo-item';
+    
+    let html = `
+      <div class="todo-timing">${todo.timing}</div>
+      <div class="todo-task">${todo.task}</div>
+      <div class="todo-detail">
+        <span class="todo-detail-label">📍 提出先:</span>${todo.where}
+      </div>
+    `;
+    
+    if (todo.documents && todo.documents.length > 0) {
+      html += `
+        <div class="todo-documents">
+          <span class="todo-detail-label">📄 必要書類:</span><br>
+          ${todo.documents.map(doc => `・${doc}`).join('<br>')}
+        </div>
+      `;
+    }
+    
+    if (todo.notes) {
+      html += `
+        <div class="todo-notes">
+          <span class="todo-detail-label">💡 メモ:</span> ${todo.notes}
+        </div>
+      `;
+    }
+    
+    if (todo.links && todo.links.length > 0) {
+      html += `
+        <div class="todo-links">
+          ${todo.links.map(link => `<a href="${link}" class="todo-link" target="_blank">詳細を見る</a>`).join('')}
+        </div>
+      `;
+    }
+    
+    todoItem.innerHTML = html;
+    container.appendChild(todoItem);
+  });
+  
+  // チャット画面・結果画面を非表示
+  document.getElementById('chatView').style.display = 'none';
+  document.getElementById('resultView').style.display = 'none';
+  
+  // Todoページを表示
+  document.getElementById('todoPage').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ========== 給付金ガイドページ表示 ==========
+function showBenefitGuide() {
+  closeSideMenu();
+  
+  // チャット画面・結果画面を非表示
+  document.getElementById('chatView').style.display = 'none';
+  document.getElementById('resultView').style.display = 'none';
+  
+  // 給付金ガイドページを表示
+  document.getElementById('benefitGuidePage').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ========== ページを閉じる ==========
+function hidePage() {
+  // すべての情報ページを非表示
+  document.getElementById('todoPage').classList.remove('active');
+  document.getElementById('benefitGuidePage').classList.remove('active');
+  
+  // チャット画面に戻る
+  document.getElementById('chatView').style.display = 'block';
+  document.getElementById('resultView').style.display = 'none';
+  window.scrollTo(0, 0);
+}
+
+</script>
+    
+    <style>
+        :root {
+            --bg-color: #fff9e6;
+            --paper-color: #ffffff;
+            --text-color: #5d4037;
+            --accent-pink: #ff8a65;
+            --accent-blue: #4fc3f7;
+            --accent-green: #81c784;
+            --cost-red: #ff5252;
+            --support-green: #4caf50;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden;
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: var(--bg-color); color: var(--text-color);
+        }
+
+        body::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(#ffe0b2 2px, transparent 2px);
+            background-size: 30px 30px; z-index: -1;
+        }
+
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff3e0; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.8s ease-out;
+        }
+        .splash-content { text-align: center; animation: bounceIn 1s ease-out; }
+        .splash-img { 
+            width: 180px; height: 180px; border-radius: 50%; 
+            border: 5px solid #ff8a65; background: #fff; object-fit: cover;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 20px;
+        }
+        .splash-text {
+            font-size: 24pt; font-weight: 800; color: #5d4037; letter-spacing: 2px;
+            text-shadow: 2px 2px 0px #fff;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .fade-out { opacity: 0; pointer-events: none; }
+
+        #chat-screen {
+            width: 100%; max-width: 600px; background: rgba(255,255,255,0.98);
+            display: flex; flex-direction: column; height: 100vh; height: 100dvh; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 100;
+        }
+        .chat-header {
+            background: var(--accent-pink); color: white; padding: 15px;
+            text-align: center; font-weight: 800; font-size: 1.2em;
+            border-bottom: 4px dotted #fff; flex-shrink: 0; 
+            padding-top: env(safe-area-inset-top); 
+        }
+        .chat-container {
+            flex: 1; padding: 20px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 15px;
+            scroll-behavior: smooth; -webkit-overflow-scrolling: touch; 
+        }
+        .message { display: flex; align-items: flex-end; margin-bottom: 10px; }
+        .message.bot { flex-direction: row; }
+        .message.user { flex-direction: row-reverse; }
+        .avatar {
+            width: 55px; height: 55px; border-radius: 50%; margin: 0 10px;
+            background: #fff; border: 3px solid var(--accent-pink);
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+            flex-shrink: 0;
+        }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .bubble {
+            max-width: 75%; padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.5;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative;
+        }
+        .bot .bubble { background: #fff; border: 2px solid var(--accent-pink); border-bottom-left-radius: 4px; }
+        .user .bubble { background: var(--accent-blue); color: #01579b; border-bottom-right-radius: 4px; }
+        
+        .input-area { 
+            background: #fff; padding: 15px 20px; border-top: 2px dashed var(--accent-pink); 
+            flex-shrink: 0; padding-bottom: calc(20px + env(safe-area-inset-bottom));
+        }
+        .input-group { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;}
+        input, select {
+            padding: 12px; border: 2px solid var(--accent-blue); border-radius: 10px;
+            font-family: inherit; font-size: 16px; outline: none; flex: 1; min-width: 120px;
+        }
+        .btn {
+            background: var(--accent-pink); color: white; border: none; padding: 12px 20px;
+            border-radius: 20px; font-weight: 800; cursor: pointer; transition: 0.2s;
+            box-shadow: 0 3px 0 #e64a19; width: 100%; margin-top: 5px; font-size: 16px;
+        }
+        .btn:active { transform: translateY(3px); box-shadow: 0 0 0; }
+        
+        .option-btn {
+            background: #fff; border: 2px solid #8d6e63; color: #5d4037; padding: 10px 16px;
+            border-radius: 20px; margin: 5px; cursor: pointer; font-weight: bold; 
+            flex: 1 1 45%; font-size: 14px;
+        }
+        .option-btn:hover { background: #fff3e0; }
+
+        #result-screen {
+            display: none; width: 100%; padding: 20px; padding-bottom: 80px; 
+            height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            box-sizing: border-box;
+        }
+        .wrapper { 
+            max-width: 1200px; margin: 0 auto; background: var(--paper-color);
+            padding: 20px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(93, 64, 55, 0.1);
+        }
+        
+        h1 { 
+            color: #5d4037; 
+            font-size: clamp(18pt, 5vw, 22pt); 
+            margin: 0 0 15px 0; 
+            line-height: 1.3; 
+            text-align: center;
+        }
+        h2 { 
+            color: #5d4037; 
+            font-size: clamp(14pt, 4vw, 18pt); 
+            margin: 30px 0 15px 0; 
+            padding-left: 15px; 
+            border-left: 5px solid var(--accent-pink);
+        }
+
+        /* アクションボタン */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .action-btn {
+            background: var(--accent-pink);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: clamp(10pt, 2.8vw, 12pt);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 3px 10px rgba(255, 138, 101, 0.3);
+            transition: 0.2s;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 138, 101, 0.4);
+        }
+
+        .action-btn.secondary {
+            background: var(--accent-blue);
+            box-shadow: 0 3px 10px rgba(79, 195, 247, 0.3);
+        }
+
+        .action-btn.secondary:hover {
+            box-shadow: 0 5px 15px rgba(79, 195, 247, 0.4);
+        }
+
+        /* 期間別カード */
+        .period-card {
+            background: white; border-radius: 20px; padding: 20px; margin: 20px 0;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            border-top: 5px solid var(--accent-pink);
+        }
+
+        .period-header {
+            text-align: center; margin-bottom: 20px;
+        }
+
+        .period-title {
+            font-size: clamp(16pt, 4.5vw, 20pt); 
+            font-weight: 800; 
+            color: var(--accent-pink);
+            margin-bottom: 8px;
+        }
+
+        .period-subtitle {
+            font-size: clamp(9pt, 2.5vw, 11pt); 
+            color: #888;
+        }
+
+        /* 実質負担額（大きく表示） */
+        .net-amount-box {
+            background: linear-gradient(135deg, #fff9e6 0%, #ffe0b2 100%);
+            border-radius: 15px; padding: 25px 15px; margin-bottom: 20px;
+            text-align: center; border: 3px solid #ffa726;
+        }
+
+        .net-label {
+            font-size: clamp(11pt, 3vw, 13pt); 
+            color: #666; 
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .net-amount {
+            font-size: clamp(32pt, 10vw, 42pt); 
+            font-weight: 900; 
+            margin: 10px 0;
+            letter-spacing: -1px;
+            word-break: break-all;
+        }
+
+        .net-amount.positive { color: var(--cost-red); }
+        .net-amount.negative { color: var(--support-green); }
+
+        /* 小さめの合計表示 */
+        .summary-row {
+            display: flex; 
+            justify-content: space-around;
+            margin-top: 15px; 
+            padding-top: 15px;
+            border-top: 2px dashed #e0e0e0;
+            gap: 10px;
+        }
+
+        .summary-item {
+            text-align: center; flex: 1; min-width: 0;
+        }
+
+        .summary-item-label {
+            font-size: clamp(8pt, 2.2vw, 10pt); 
+            color: #888; 
+            margin-bottom: 5px;
+        }
+
+        .summary-item-amount {
+            font-size: clamp(12pt, 3.5vw, 16pt); 
+            font-weight: 700;
+            word-break: break-all;
+        }
+
+        .summary-item-amount.cost { color: var(--cost-red); }
+        .summary-item-amount.support { color: var(--support-green); }
+
+        /* 詳細内訳 */
+        .detail-section {
+            margin-top: 20px;
+        }
+
+        .detail-toggle {
+            background: #f5f5f5; border: none; padding: 12px 15px;
+            border-radius: 20px; cursor: pointer; font-weight: bold;
+            font-size: clamp(9pt, 2.5vw, 11pt);
+            width: 100%;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .detail-toggle:hover {
+            background: #e0e0e0;
+        }
+
+        .detail-content {
+            display: none; margin-top: 15px; padding: 15px;
+            background: #fafafa; border-radius: 10px;
+        }
+
+        .detail-content.active {
+            display: block;
+        }
+
+        .detail-item {
+            display: flex; justify-content: space-between;
+            padding: 10px 0; border-bottom: 1px dashed #e0e0e0;
+            gap: 10px;
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-name {
+            font-size: clamp(9pt, 2.5vw, 11pt);
+            color: #5d4037;
+            flex: 1;
+        }
+
+        .detail-amount {
+            font-size: clamp(9pt, 2.5vw, 11pt);
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .detail-amount.cost { color: var(--cost-red); }
+        .detail-amount.support { color: var(--support-green); }
+
+        /* 注意書きボックス */
+        .notice-box {
+            background: #fff3e0; border: 2px dashed #ffa726;
+            border-radius: 15px; padding: 15px; margin: 20px 0;
+        }
+
+        .notice-title {
+            font-weight: 800; color: #f57f17; margin-bottom: 10px;
+            font-size: clamp(10pt, 2.8vw, 12pt);
+        }
+
+        .notice-text {
+            font-size: clamp(8.5pt, 2.3vw, 10pt);
+            line-height: 1.7; color: #666;
+        }
+
+        /* 総合サマリー */
+        .total-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border-radius: 20px; padding: 25px 20px;
+            margin: 30px 0; text-align: center;
+        }
+
+        .total-summary-title {
+            font-size: clamp(12pt, 3.5vw, 16pt);
+            opacity: 0.9; margin-bottom: 15px;
+        }
+
+        .total-summary-amount {
+            font-size: clamp(36pt, 10vw, 48pt);
+            font-weight: 900;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            word-break: break-all;
+            letter-spacing: -1px;
+        }
+
+        .total-summary-detail {
+            font-size: clamp(9pt, 2.5vw, 11pt);
+            opacity: 0.8; margin-top: 15px;
+        }
+
+        .advice-box {
+            background-color: #fffde7; border: 3px dashed #fbc02d;
+            border-radius: 15px; padding: 20px; margin: 30px 0;
+            display: flex; align-items: flex-start; gap: 15px;
+        }
+        .advice-avatar {
+            width: 60px; height: 60px; flex-shrink: 0;
+            border-radius: 50%; background: #fff; border: 3px solid #fbc02d;
+            overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
+        .advice-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .advice-content { 
+            font-size: clamp(9pt, 2.5vw, 11pt);
+            line-height: 1.7; 
+            color: #5d4037; 
+            flex: 1;
+        }
+        .advice-title { 
+            font-weight: 800; 
+            color: #f57f17; 
+            font-size: clamp(11pt, 3vw, 13pt);
+            margin-bottom: 10px; 
+            display: block;
+        }
+
+        /* 制度カード */
+        .subsidy-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .subsidy-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid var(--support-green);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .subsidy-card.papa {
+            border-left-color: var(--accent-blue);
+        }
+
+        .subsidy-card:hover {
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+
+        .subsidy-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .subsidy-card-title {
+            font-size: clamp(11pt, 3vw, 13pt);
+            font-weight: 800;
+            color: var(--text-color);
+            flex: 1;
+        }
+
+        .subsidy-card-amount {
+            font-size: clamp(14pt, 4vw, 18pt);
+            font-weight: 900;
+            color: var(--support-green);
+            white-space: nowrap;
+            margin-left: 10px;
+        }
+
+        .subsidy-card.papa .subsidy-card-amount {
+            color: var(--accent-blue);
+        }
+
+        .subsidy-card-desc {
+            font-size: clamp(8.5pt, 2.3vw, 10pt);
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .subsidy-card-footer {
+            font-size: clamp(8pt, 2.2vw, 9pt);
+            color: #999;
+        }
+
+        .subsidy-card-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: var(--accent-blue);
+            color: white;
+            border-radius: 12px;
+            font-size: clamp(7pt, 2vw, 9pt);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 30px 25px;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px; right: 15px;
+            background: #f5f5f5;
+            border: none;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #e0e0e0;
+        }
+
+        .modal-title {
+            font-size: clamp(14pt, 4vw, 18pt);
+            font-weight: 800;
+            color: var(--text-color);
+            margin-bottom: 10px;
+            padding-right: 40px;
+        }
+
+        .modal-amount {
+            font-size: clamp(20pt, 6vw, 28pt);
+            font-weight: 900;
+            color: var(--support-green);
+            margin-bottom: 20px;
+        }
+
+        .modal-section {
+            margin: 20px 0;
+        }
+
+        .modal-section-title {
+            font-size: clamp(11pt, 3vw, 13pt);
+            font-weight: 700;
+            color: var(--accent-pink);
+            margin-bottom: 10px;
+            border-bottom: 2px solid var(--accent-pink);
+            padding-bottom: 5px;
+        }
+
+        .modal-section-content {
+            font-size: clamp(9pt, 2.5vw, 11pt);
+            line-height: 1.8;
+            color: #5d4037;
+        }
+
+        .modal-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: var(--accent-pink);
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: clamp(9pt, 2.5vw, 11pt);
+        }
+
+        /* タイムライン */
+        .timeline {
+            margin: 30px 0;
+            padding: 20px 10px;
+            background: white;
+            border-radius: 15px;
+        }
+
+        .timeline-item {
+            display: flex;
+            margin-bottom: 25px;
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: 12px;
+            top: 30px;
+            width: 2px;
+            height: calc(100% + 25px);
+            background: linear-gradient(180deg, var(--accent-pink) 0%, transparent 100%);
+        }
+
+        .timeline-item:last-child::before {
+            display: none;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--accent-pink);
+            border: 4px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+        }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-date {
+            font-size: clamp(9pt, 2.5vw, 11pt);
+            font-weight: 700;
+            color: var(--accent-pink);
+            margin-bottom: 5px;
+        }
+
+        .timeline-title {
+            font-size: clamp(11pt, 3vw, 13pt);
+            font-weight: 800;
+            color: var(--text-color);
+            margin-bottom: 8px;
+        }
+
+        .timeline-desc {
+            font-size: clamp(8.5pt, 2.3vw, 10pt);
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .timeline-amount {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 5px 12px;
+            background: #e8f5e9;
+            color: var(--support-green);
+            border-radius: 15px;
+            font-weight: 700;
+            font-size: clamp(9pt, 2.5vw, 11pt);
+        }
+
+        @media print {
+            body { background: #fff; display: block; height: auto; overflow: visible; }
+            #splash-screen, #chat-screen, .no-print, .action-buttons { display: none !important; }
+            #result-screen { display: block !important; overflow: visible !important; height: auto !important; }
+        }
+    
+/* ハンバーガーメニュー */
+.hamburger-btn {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1000;
+  background: var(--primary-color);
+  border: none;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+}
+.hamburger-btn:hover {
+  background: #FF6B9D;
+  transform: scale(1.05);
+}
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hamburger-icon span {
+  width: 25px;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+  transition: 0.3s;
+}
+
+/* サイドメニュー */
+.side-menu {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  width: 300px;
+  height: 100%;
+  background: white;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  z-index: 999;
+  overflow-y: auto;
+  transition: left 0.3s ease;
+}
+.side-menu.open {
+  left: 0;
+}
+.side-menu-header {
+  background: var(--primary-color);
+  color: white;
+  padding: 20px;
+  font-size: 18px;
+  font-weight: bold;
+}
+.side-menu-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+.menu-section {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+.menu-section-title {
+  font-size: 14px;
+  color: #999;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+.menu-item {
+  display: block;
+  padding: 12px 15px;
+  color: #333;
+  text-decoration: none;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  transition: all 0.2s;
+}
+.menu-item:hover {
+  background: #FFF0F5;
+  color: var(--primary-color);
+}
+.menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 998;
+  display: none;
+}
+.menu-overlay.show {
+  display: block;
+}
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Phase 2: Todoページ・給付金ガイドページの実装
+"""
+
+import re
+
+# Phase1のファイルを読み込み
+with open('/mnt/user-data/outputs/ikuzineko_v8_phase1.html', 'r', encoding='utf-8') as f:
+    html = f.read()
+
+# TodoリストのJSデータを読み込み
+with open('/tmp/todo_content_data.js', 'r', encoding='utf-8') as f:
+    todo_data_js = f.read()
+
+# 1. Todoページ用のCSSを追加
+todo_css = """
+/* Todoページ・給付金ガイドページ */
+.info-page {
+  display: none;
+  background: #FFF5F7;
+  min-height: 100vh;
+  padding: 20px;
+  padding-top: 70px;
+}
+.info-page.active {
+  display: block;
+}
+.info-page-header {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
+}
+.info-page-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+.info-page-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 5px;
+}
+.info-page-subtitle {
+  font-size: 14px;
+  color: #999;
+}
+.back-btn {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  background: white;
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 999;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+.back-btn:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* Todoアイテム */
+.todo-item {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.todo-timing {
+  display: inline-block;
+  background: #FFE5EC;
+  color: var(--primary-color);
+  padding: 5px 12px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.todo-task {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+.todo-detail {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.todo-detail-label {
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-right: 5px;
+}
+.todo-documents {
+  background: #FFF9E6;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+.todo-notes {
+  background: #E8F5E9;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #2E7D32;
+}
+.todo-links {
+  margin-top: 10px;
+}
+.todo-link {
+  display: inline-block;
+  background: var(--primary-color);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 20px;
+  text-decoration: none;
+  font-size: 13px;
+  margin-right: 10px;
+  margin-top: 5px;
+  transition: all 0.3s;
+}
+.todo-link:hover {
+  background: #FF6B9D;
+  transform: scale(1.05);
+}
+
+/* 給付金ガイドページ */
+.benefit-section {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.benefit-section-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #FFE5EC;
+}
+.flowchart {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.flow-step {
+  background: linear-gradient(135deg, #FFF5F7 0%, #FFE5EC 100%);
+  padding: 15px;
+  border-radius: 10px;
+  border-left: 4px solid var(--primary-color);
+  position: relative;
+}
+.flow-step-number {
+  display: inline-block;
+  background: var(--primary-color);
+  color: white;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  border-radius: 50%;
+  font-weight: bold;
+  margin-right: 10px;
+}
+.flow-step-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.flow-step-content {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin-left: 40px;
+}
+.branch-box {
+  background: #F3E5F5;
+  padding: 15px;
+  border-radius: 10px;
+  margin: 10px 0;
+  margin-left: 40px;
+  border: 2px dashed #9C27B0;
+}
+.branch-title {
+  font-weight: bold;
+  color: #9C27B0;
+  margin-bottom: 8px;
+}
+.calculation-example {
+  background: #E3F2FD;
+  padding: 15px;
+  border-radius: 10px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+.calculation-example strong {
+  color: #1976D2;
+}
+.warning-box {
+  background: #FFF3E0;
+  border-left: 4px solid #FF9800;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 15px 0;
+  font-size: 14px;
+}
+
+</style>
+
+  <link rel="manifest" href="/ikujimm/manifest.json">
+  <meta name="theme-color" content="#da5100">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="育児コンシェル">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/ikujimm/icon-192.png">
+  <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/ikujimm/sw.js').catch(()=>{});});}</script>
+</head>
+<body>
+
+<!-- ハンバーガーメニュー -->
+<button class="hamburger-btn" id="hamburgerBtn">
+  <div class="hamburger-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</button>
+
+<!-- メニューオーバーレイ -->
+<div class="menu-overlay" id="menuOverlay"></div>
+
+<!-- サイドメニュー -->
+<div class="side-menu" id="sideMenu">
+  <div class="side-menu-header">
+    育児ネコ メニュー
+    <button class="side-menu-close" id="menuCloseBtn">&times;</button>
+  </div>
+  
+  <div class="menu-section">
+    <div class="menu-section-title">基本機能</div>
+    <a href="#" class="menu-item" onclick="closeSideMenu(); return false;">🏠 ホーム（計算機）</a>
+    <a href="#" class="menu-item" onclick="showSubsidyList(); return false;">📊 町田市の支援&補助金一覧</a>
+  </div>
+  
+  <div class="menu-section">
+    <div class="menu-section-title">施設検索</div>
+    <a href="https://kosodate-machida.tokyo.jp/soshiki/4/3/4/350.html" class="menu-item" target="_blank">🏫 保育園&幼稚園一覧</a>
+    <a href="https://kosodate-machida.tokyo.jp/soshiki/4/2/10/507.html" class="menu-item" target="_blank">🏢 子育て支援施設一覧</a>
+  </div>
+  
+  <div class="menu-section">
+    <div class="menu-section-title">Todoリスト</div>
+    <a href="#" class="menu-item" onclick="showTodoPage('pregnancy_confirm'); return false;">✅ 妊娠時のtodoリスト</a>
+    <a href="#" class="menu-item" onclick="showTodoPage('pregnancy'); return false;">✅ 妊娠中のtodoリスト</a>
+    <a href="#" class="menu-item" onclick="showTodoPage('before_birth'); return false;">✅ 出産前のtodoリスト</a>
+    <a href="#" class="menu-item" onclick="showTodoPage('after_birth'); return false;">✅ 出産後のtodoリスト</a>
+    <a href="#" class="menu-item" onclick="showTodoPage('year1'); return false;">✅ 1年目のtodoリスト</a>
+    <a href="#" class="menu-item" onclick="showTodoPage('year2'); return false;">✅ 2年目のtodoリスト</a>
+  </div>
+  
+  <div class="menu-section">
+    <div class="menu-section-title">給付金情報</div>
+    <a href="#" class="menu-item" onclick="showBenefitGuide(); return false;">💰 育休・産休給付金ガイド</a>
+  </div>
+</div>
+
+
+<div id="splash-screen">
+    <div class="splash-content">
+        <img src="https://i.ibb.co/W4fqCBfy/5nj5t-U2q.jpg" class="splash-img">
+        <div class="splash-text">育児ネココンシェルジュ！</div>
+    </div>
+</div>
+
+<div id="chat-screen">
+    <div class="chat-header">育児ネコ🐾町田市版</div>
+    <div class="chat-container" id="chat-messages"></div>
+    <div class="input-area" id="input-area"></div>
+</div>
+
+<div id="result-screen">
+    <div class="wrapper">
+        <h1>🐾 子育て費用シミュレーション結果</h1>
+        <p style="text-align: center; color: #888; font-size: clamp(8pt, 2.2vw, 10pt); margin-bottom: 20px;">
+            作成日: <span id="res-today"></span> / 出産予定日: <span id="res-birth"></span>
+        </p>
+
+        <!-- アクションボタン -->
+        <div class="action-buttons no-print">
+            <button class="action-btn" onclick="downloadPDF()">
+                📄 PDF保存
+            </button>
+            <button class="action-btn secondary" onclick="shareResult()">
+                📤 共有する
+            </button>
+            <button class="action-btn secondary" onclick="restartCalc()">
+                🔄 再計算
+            </button>
+        </div>
+
+        <!-- 期間別カード表示エリア -->
+        <div id="period-cards"></div>
+
+        <!-- 総合サマリー -->
+        <div class="total-summary">
+            <div class="total-summary-title">出産〜2歳まで 実質負担額合計</div>
+            <div class="total-summary-amount" id="total-net"></div>
+            <div class="total-summary-detail">
+                子育て費用総額 <span id="total-cost-sum"></span> - 補助金総額 <span id="total-support-sum"></span>
+            </div>
+        </div>
+
+        <!-- アドバイス -->
+        <div class="advice-box">
+            <div class="advice-avatar">
+                <img src="https://i.ibb.co/W4fqCBfy/5nj5t-U2q.jpg">
+            </div>
+            <div class="advice-content">
+                <span class="advice-title">🐾 育児ネコからのアドバイス</span>
+                <div id="advice-text"></div>
+            </div>
+        </div>
+
+        <!-- 注意書き -->
+        <div class="notice-box">
+            <div class="notice-title">⚠️ この計算について</div>
+            <div class="notice-text">
+                この計算には「子育てのために追加でかかる費用」と「利用できる補助金・給付金」が含まれています。<br><br>
+                通常の生活費（家賃、光熱費、食費など）は含まれていません。また、育休中の収入減は別途考慮が必要です。
+            </div>
+        </div>
+
+        <!-- 制度・補助金カード一覧 -->
+        <h2>💰 利用できる制度・補助金一覧</h2>
+        <div class="subsidy-cards" id="subsidy-cards"></div>
+
+        <!-- タイムライン -->
+        <h2>📅 妊娠〜2歳までのイベントタイムライン</h2>
+        <div class="timeline" id="timeline"></div>
+
+        <!-- 育休給付金（参考情報） -->
+        <div id="ikukyu-reference" style="display:none;">
+            <h2>💼 産休・育休の給付金について（参考）</h2>
+            <div class="notice-box" style="background: #fff3e0; border-left: 5px solid #d32f2f; border-color: #ff9800;">
+                <div class="notice-title" style="color: #d32f2f;">⚠️ 重要：産休・育休給付金は「補助金」ではありません</div>
+                <div class="notice-text" style="line-height: 1.8;">
+                    出産手当金や育児休業給付金は、<strong style="background: #fff59d; padding: 2px 6px; border-radius: 3px;">失った収入を補填する制度</strong>です。<br>
+                    子育て費用を助ける「補助金」とは性質が異なるため、<br>
+                    <strong>上記の実質負担額の計算には含まれていません。</strong><br><br>
+                    💡 社会保険料免除・非課税のため、手取りベースで約100%の収入補償になります。<br><br>
+                    <strong style="color: #1976d2;">実際には以下のような給付が受けられます：</strong>
+                </div>
+            </div>
+
+            <div id="ikukyu-cards" class="subsidy-cards"></div>
+        </div>
+
+    </div>
+</div>
+
+<!-- モーダル -->
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">×</button>
+        <div id="modal-body"></div>
+    </div>
+</div>
+
+<script>
+    const NEKO_IMG_URL = 'https://i.ibb.co/W4fqCBfy/5nj5t-U2q.jpg';
+    
+    const COST = {
+        PRENATAL_CHECKUP: 280000,
+        DELIVERY_NORMAL: 600000,
+        DELIVERY_PAINLESS_ADD: 100000,
+        BABY_INITIAL: 150000,
+        CONSUMABLES_MONTHLY: 30000,
+        CONSUMABLES_Y2_MONTHLY: 20000,
+        CLOTHES_MONTHLY: 5000,
+        MEDICAL_MONTHLY: 3000,
+        TOYS_EDUCATION: 10000,
+        NURSERY_0TO2_MONTHLY: 30000
+    };
+
+    const SUBSIDY = {
+        LUMP_SUM: 500000,
+        CHECKUP: 196000,
+        PREGNANCY_GIFT: 50000,
+        BIRTH_GIFT: 100000,
+        JIDO_0TO3_1ST: 15000,
+        JIDO_0TO3_3RD: 30000,
+        SUPPORT_018: 5000,
+        PREGNANCY_SUPPORT: 100000,
+        PAINLESS_SUBSIDY: 100000
+    };
+
+    const userData = {
+        // 基本情報
+        childOrder: null,
+        painlessDelivery: false,
+        needNursery: false,
+        birthDate: null,
+        
+        // ママ情報（v7追加）
+        mamaEmploymentStatus: null,  // 'employee', 'self-employed', 'housewife', 'part-time'
+        mamaHasInsurance: null,      // true/false (パートの場合のみ使用)
+        mamaIsEmployee: false,       // 計算用: 社会保険加入の会社員か？
+        mamaIkukyu: false,           // 育休取得するか
+        mamaIkukyuMonths: 0,         // 育休月数（1-24）
+        mamaMonthlySalary: 0,        // 月収（ボーナス除く）
+        
+        // パパ情報（既存）
+        papaEmploymentStatus: null,  // v7追加: 'employee', 'self-employed', 'part-time'
+        papaHasInsurance: null,      // v7追加: true/false (パートの場合のみ使用)
+        papaIsEmployee: false,       // v7追加: 計算用
+        papaIkukyu: false,
+        papaIkukyuDays: 0,
+        papaIncome: 0                // v8でpapaMonthlySalaryにリネーム予定
+    };
+    
+    const scenario = [
+        { 
+            id: 'intro', 
+            bot: [
+                "こんにちはニャ！育児ネココンシェルジュだニャ🐾",
+                "現実的な子育て費用を計算するニャ！",
+                "保育料や医療費も含めた「本当にかかる費用」を出すニャ",
+                "ママとパパの育休給付金も計算できるニャ！✨"
+            ], 
+            type: 'next', 
+            nextId: 'child_order' 
+        },
+        { 
+            id: 'child_order', 
+            bot: ["今回生まれる子は第何子ニャ？"], 
+            type: 'select', 
+            key: 'childOrder', 
+            options: [
+                {label: '第1子', value: 1},
+                {label: '第2子', value: 2},
+                {label: '第3子以降', value: 3}
+            ], 
+            nextId: 'delivery' 
+        },
+        { 
+            id: 'delivery', 
+            bot: ["分娩方法は？"], 
+            type: 'select', 
+            key: 'painlessDelivery', 
+            options: [
+                {label: '普通分娩', value: false}, 
+                {label: '無痛分娩', value: true}
+            ], 
+            nextId: 'nursery' 
+        },
+        { 
+            id: 'nursery', 
+            bot: ["0〜2歳で保育園に預ける予定はあるかニャ？"], 
+            type: 'select', 
+            key: 'needNursery', 
+            options: [
+                {label: 'はい（預ける）', value: true},
+                {label: 'いいえ（家で育てる）', value: false}
+            ], 
+            nextId: 'mama_employment' 
+        },
+        {
+            id: 'mama_employment',
+            bot: ["ママの就業状況を教えてニャ！"],
+            type: 'select',
+            key: 'mamaEmploymentStatus',
+            options: [
+                {label: '会社員（正社員・派遣・契約社員）', value: 'employee'},
+                {label: '自営業・フリーランス', value: 'self-employed'},
+                {label: '専業主婦', value: 'housewife'},
+                {label: 'パート・アルバイト', value: 'part-time'}
+            ],
+            nextId: 'mama_check'
+        },
+        {
+            id: 'mama_check',
+            bot: [""],
+            type: 'auto',
+            action: function() {
+                // 会社員 → 育休質問へ
+                if (userData.mamaEmploymentStatus === 'employee') {
+                    userData.mamaIsEmployee = true;
+                    return 'mama_ikukyu';
+                }
+                // パート → 社会保険確認へ
+                if (userData.mamaEmploymentStatus === 'part-time') {
+                    return 'mama_insurance';
+                }
+                // 自営業・専業主婦 → パパの質問へ
+                userData.mamaIsEmployee = false;
+                return 'papa_employment';
+            }
+        },
+        {
+            id: 'mama_insurance',
+            bot: ["パート・アルバイトの方へ：", "勤務先で社会保険（健康保険・厚生年金）に加入していますか？"],
+            type: 'select',
+            key: 'mamaHasInsurance',
+            options: [
+                {label: '加入している（会社の健康保険）', value: true},
+                {label: '加入していない（国民健康保険）', value: false}
+            ],
+            nextId: 'mama_insurance_check'
+        },
+        {
+            id: 'mama_insurance_check',
+            bot: [""],
+            type: 'auto',
+            action: function() {
+                if (userData.mamaHasInsurance) {
+                    userData.mamaIsEmployee = true;
+                    return 'mama_ikukyu';
+                } else {
+                    userData.mamaIsEmployee = false;
+                    addMsg('bot', '国民健康保険の場合、育休給付金は受けられませんが、\n出産育児一時金などの子育て補助金は全て利用できますニャ！😊');
+                    return 'papa_employment';
+                }
+            }
+        },
+        {
+            id: 'mama_ikukyu',
+            bot: ["ママは育休を取得する予定はありますか？"],
+            type: 'select',
+            key: 'mamaIkukyu',
+            options: [
+                {label: 'はい（取得する）', value: true},
+                {label: 'いいえ（取得しない）', value: false}
+            ],
+            nextId: 'mama_ikukyu_check'
+        },
+        {
+            id: 'mama_ikukyu_check',
+            bot: [""],
+            type: 'auto',
+            action: function() {
+                if (userData.mamaIkukyu) {
+                    return 'mama_ikukyu_months';
+                } else {
+                    return 'papa_employment';
+                }
+            }
+        },
+        {
+            id: 'mama_ikukyu_months',
+            bot: ["ママの育休期間は何ヶ月ですか？", "（子どもが何ヶ月になるまで育休を取るか）"],
+            type: 'number',
+            key: 'mamaIkukyuMonths',
+            placeholder: '月数を入力（例: 12）',
+            nextId: 'mama_monthly_salary'
+        },
+        {
+            id: 'mama_monthly_salary',
+            bot: ["ママの月収を教えてくださいニャ", "（育休開始前6ヶ月の平均、税込・総支給額）"],
+            type: 'number',
+            key: 'mamaMonthlySalary',
+            placeholder: '金額を入力（例: 250000）',
+            nextId: 'papa_employment',
+            bonusWarning: true
+        },
+        {
+            id: 'papa_employment',
+            bot: ["パパの就業状況を教えてニャ！"],
+            type: 'select',
+            key: 'papaEmploymentStatus',
+            options: [
+                {label: '会社員（正社員・派遣・契約社員）', value: 'employee'},
+                {label: '自営業・フリーランス', value: 'self-employed'},
+                {label: 'パート・アルバイト', value: 'part-time'}
+            ],
+            nextId: 'papa_check'
+        },
+        {
+            id: 'papa_check',
+            bot: [""],
+            type: 'auto',
+            action: function() {
+                if (userData.papaEmploymentStatus === 'employee') {
+                    userData.papaIsEmployee = true;
+                    return 'papa_ikukyu';
+                }
+                if (userData.papaEmploymentStatus === 'part-time') {
+                    return 'papa_insurance';
+                }
+                // 自営業
+                userData.papaIsEmployee = false;
+                addMsg('bot', '自営業・フリーランスの方は育休給付金の対象外ですが、\n子育て補助金は全て利用できますニャ！');
+                return 'birth_date';
+            }
+        },
+        {
+            id: 'papa_insurance',
+            bot: ["パート・アルバイトの方へ：", "勤務先で社会保険に加入していますか？"],
+            type: 'select',
+            key: 'papaHasInsurance',
+            options: [
+                {label: '加入している', value: true},
+                {label: '加入していない', value: false}
+            ],
+            nextId: 'papa_insurance_check'
+        },
+        {
+            id: 'papa_insurance_check',
+            bot: [""],
+            type: 'auto',
+            action: function() {
+                if (userData.papaHasInsurance) {
+                    userData.papaIsEmployee = true;
+                    return 'papa_ikukyu';
+                } else {
+                    userData.papaIsEmployee = false;
+                    return 'birth_date';
+                }
+            }
+        },
+        {
+            id: 'papa_ikukyu',
+            bot: ["パパ（配偶者）も育休を取得する予定はあるかニャ？", "14日以上取得すると追加の給付金がもらえるニャ！"],
+            type: 'select',
+            key: 'papaIkukyu',
+            options: [
+                {label: 'はい（取得する）', value: true},
+                {label: 'いいえ（取得しない）', value: false}
+            ],
+            nextId: 'papa_days'
+        },
+        {
+            id: 'papa_days',
+            bot: ["パパの育休取得日数は？（14日以上推奨）"],
+            type: 'number',
+            key: 'papaIkukyuDays',
+            placeholder: '日数を入力（例: 28）',
+            nextId: 'papa_income'
+        },
+        {
+            id: 'papa_income',
+            bot: ["パパの月収は？（税込・おおよそでOK）"],
+            type: 'number',
+            key: 'papaIncome',
+            placeholder: '金額を入力（例: 300000）',
+            nextId: 'birth_date'
+        },
+        { 
+            id: 'birth_date', 
+            bot: ["出産予定日を教えてニャ！"], 
+            type: 'date', 
+            key: 'birthDate', 
+            nextId: 'calc' 
+        },
+        { 
+            id: 'calc', 
+            bot: ["完璧だニャ！現実的な費用を計算するニャ！"], 
+            type: 'action', 
+            label: '結果を見るニャ🐾', 
+            action: showResult 
+        }
+    ];
+
+    const SUBSIDY_INFO = [
+        {
+            id: 'lump_sum',
+            title: '出産育児一時金',
+            amount: '50万円',
+            desc: '出産にかかる費用をサポート。直接支払制度を利用すれば、病院に直接支払われます。',
+            when: '出産後3ヶ月以内',
+            where: '加入している健康保険（協会けんぽ、組合健保など）',
+            how: '病院で直接支払制度の合意文書に署名するだけでOK。病院が保険者に請求します。',
+            eligible: '健康保険に加入している方（国民健康保険含む）',
+            link: 'https://www.kyoukaikenpo.or.jp/g6/cat620/r307/',
+            isPapa: false
+        },
+        {
+            id: 'checkup',
+            title: '妊婦健康診査助成',
+            amount: '約20万円',
+            desc: '妊婦健診14回分の費用を助成。町田市では1回あたり最大14,000円まで助成されます。',
+            when: '妊娠判明後すぐ（母子手帳交付時に受診券をもらう）',
+            where: '町田市役所 または 市内の保健センター',
+            how: '母子健康手帳の交付時に「妊婦健康診査受診票」をもらい、健診時に医療機関に提出します。',
+            eligible: '町田市に住民票がある妊婦',
+            link: 'https://kosodate-machida.tokyo.jp/soshiki/3/1/8/1726.html',
+            isPapa: false
+        },
+        {
+            id: 'gift',
+            title: '出産・子育て応援ギフト',
+            amount: '合計15万円',
+            desc: '出産応援ギフト5万円＋子育て応援ギフト10万円。面談後にギフトカード（東京都「赤ちゃんファースト」）で支給。',
+            when: '妊娠届出時（5万円）＋出生届出後（10万円）',
+            where: '町田市役所 子ども総務課、各市民センター',
+            how: '妊娠届出時および出生届出後に面談を実施。面談後、専用カードが郵送されます。',
+            eligible: '町田市在住で妊娠届出・出生届出をした方',
+            link: 'https://kosodate-machida.tokyo.jp/soshiki/3/1/8/23909.html',
+            isPapa: false
+        },
+        {
+            id: 'jido',
+            title: '児童手当',
+            amount: '月1.5〜3万円',
+            desc: '0〜3歳未満は月15,000円（第3子以降は30,000円）。2024年10月から所得制限撤廃で全世帯対象に。',
+            when: '出生後15日以内に申請（申請月の翌月分から支給）',
+            where: '町田市役所 子ども総務課',
+            how: '出生届出と同時に申請できます。必要書類：申請者の健康保険証、振込先口座情報。',
+            eligible: '0歳〜高校生（18歳年度末）までの子を養育している方',
+            link: 'https://www.cfa.go.jp/policies/kokoseido/jidouteate/',
+            isPapa: false
+        },
+        {
+            id: 'support_018',
+            title: '東京都018サポート',
+            amount: '月5,000円',
+            desc: '18歳まで毎月5,000円（年間6万円）を給付。所得制限なし。',
+            when: '出生後または転入後に随時申請可能',
+            where: 'オンライン申請（東京都018サポートサイト）',
+            how: 'スマートフォンでマイナンバーカードを使ってオンライン申請。数週間で口座に振り込まれます。',
+            eligible: '東京都内在住の0歳〜18歳の子を養育している方',
+            link: 'https://018support.metro.tokyo.lg.jp/',
+            isPapa: false
+        },
+        {
+            id: 'pregnancy_support',
+            title: '妊婦のための支援給付',
+            amount: '10万円',
+            desc: '2025年4月から開始。所得制限なし。妊娠時と出産時に各5万円支給（合計10万円）。',
+            when: '妊娠時・出産時（2025年4月以降）',
+            where: '市区町村窓口またはオンライン申請',
+            how: '詳細は2025年春に発表予定。おそらく母子手帳交付時と出生届出時に申請可能。',
+            eligible: '2025年4月以降に妊娠・出産する方（所得制限なし）',
+            link: 'https://www.cfa.go.jp/policies/kokoseido/',
+            isPapa: false
+        },
+        {
+            id: 'painless',
+            title: '無痛分娩費用助成',
+            amount: '最大10万円',
+            desc: '東京都が2025年10月から無痛分娩費用を最大10万円助成。',
+            when: '出産後（2025年10月以降）',
+            where: '東京都福祉局（申請方法は2025年夏頃発表予定）',
+            how: '領収書と申請書を提出。詳細は東京都福祉局HPで確認してください。',
+            eligible: '東京都内の医療機関で無痛分娩を行った方',
+            link: 'https://www.fukushi.metro.tokyo.lg.jp/kodomo/shussan/mutsubunben/',
+            isPapa: false
+        },
+        {
+            id: 'nursery_free',
+            title: '東京都 第1子保育料無償化',
+            amount: '月3万円相当',
+            desc: '2025年9月から0〜2歳の第1子保育料も無償化（東京都独自）。',
+            when: '2025年9月以降',
+            where: '自動適用（申請不要）',
+            how: '保育園入園手続きを通常通り行えば、2025年9月以降は自動的に無償化されます。',
+            eligible: '東京都内の認可保育園に通う0〜2歳児（第1子含む）',
+            link: 'https://www.fukushi.metro.tokyo.lg.jp/kodomo/hoiku/mushouka/',
+            isPapa: false
+        }
+    ];
+    
+    window.onload = function() {
+        const splash = document.getElementById('splash-screen');
+        setTimeout(() => {
+            splash.classList.add('fade-out');
+            setTimeout(() => {
+                splash.style.display = 'none';
+                initChat(); 
+            }, 800);
+        }, 2000);
+    };
+
+    function initChat() { processStep(scenario[0]); }
+
+    function processStep(s) { 
+        let d = 0; 
+        s.bot.forEach((m, i) => { 
+            setTimeout(() => {
+                addMsg('bot', m); 
+                if (i === s.bot.length - 1) showInp(s);
+            }, d); 
+            d += 800; 
+        });
+    }
+
+    function addMsg(snd, txt) {
+        const c = document.getElementById('chat-messages');
+        const d = document.createElement('div');
+        d.className = `message ${snd}`;
+        d.innerHTML = `${snd === 'bot' ? `<div class="avatar"><img src="${NEKO_IMG_URL}"></div>` : ''}<div class="bubble">${txt}</div>`;
+        c.appendChild(d); 
+        setTimeout(() => { c.scrollTop = c.scrollHeight; }, 100);
+    }
+
+    function showInp(s) {
+        const a = document.getElementById('input-area'); 
+        a.innerHTML = '';
+        
+        // v7追加: autoタイプの処理（自動分岐）
+        if (s.type === 'auto') {
+            if (s.action && typeof s.action === 'function') {
+                const nextId = s.action();
+                if (nextId) {
+                    const nextStep = scenario.find(x => x.id === nextId);
+                    if (nextStep) {
+                        setTimeout(() => { processStep(nextStep); }, 100);
+                    }
+                }
+            }
+            return;
+        }
+        
+        if (s.type === 'next') { 
+            setTimeout(() => { processStep(scenario.find(x => x.id === s.nextId)); }, 800); 
+            return;
+        }
+        
+        if (s.type === 'select') {
+            s.options.forEach(o => {
+                const b = document.createElement('button'); 
+                b.className = 'option-btn'; 
+                b.innerText = o.label;
+                b.onclick = () => { 
+                    addMsg('user', o.label); 
+                    userData[s.key] = o.value;
+                    
+                    // パパ育休取得しない場合はスキップ
+                    if (s.key === 'papaIkukyu' && !o.value) {
+                        userData.papaIkukyuDays = 0;
+                        userData.papaIncome = 0;
+                        processStep(scenario.find(x => x.id === 'birth_date'));
+                    } else {
+                        processStep(scenario.find(x => x.id === s.nextId));
+                    }
+                };
+                a.appendChild(b);
+            });
+        } else if (s.type === 'number') {
+            // v7追加: ボーナス警告
+            let bonusWarningHtml = '';
+            if (s.bonusWarning) {
+                bonusWarningHtml = `
+                    <div style="margin-top: 10px; padding: 12px; background: #fff9e6; border-left: 4px solid #ff9800; border-radius: 6px; font-size: clamp(9pt, 2.5vw, 11pt); line-height: 1.6;">
+                        <strong>💡 月収について</strong><br>
+                        • 育休開始前<strong>6ヶ月間の平均月給</strong>を入力してください<br>
+                        • <strong style="color: #d32f2f;">ボーナス（賞与）は除いてください</strong><br>
+                        • 手取りではなく<strong>総支給額</strong>（保険料控除前）<br>
+                        <br>
+                        <span style="font-size: 0.85em; color: #666;">
+                        例: 月給25万円、年2回ボーナス各40万円 → 「250000」と入力
+                        </span>
+                    </div>
+                `;
+            }
+            
+            a.innerHTML = `<div class="input-group">
+                <input type="number" id="inp" placeholder="${s.placeholder || ''}">
+                <button class="btn" onclick="subVal('${s.key}','${s.nextId}')">決定ニャ</button>
+            </div>
+            ${bonusWarningHtml}`;
+        } else if (s.type === 'date') {
+            const dt = new Date(); 
+            dt.setMonth(dt.getMonth() + 6);
+            a.innerHTML = `<div class="input-group">
+                <input type="date" id="inp" value="${dt.toISOString().split('T')[0]}">
+                <button class="btn" onclick="subVal('${s.key}','${s.nextId}')">決定ニャ</button>
+            </div>`;
+        } else if (s.type === 'action') {
+            const b = document.createElement('button'); 
+            b.className = 'btn'; 
+            b.innerText = s.label; 
+            b.onclick = s.action; 
+            a.appendChild(b);
+        }
+    }
+
+    function subVal(k, nid) {
+        const v = document.getElementById('inp').value; 
+        if (!v) return;
+        userData[k] = k === 'birthDate' ? v : Number(v);
+        addMsg('user', v);
+        processStep(scenario.find(x => x.id === nid));
+    }
+
+    function showResult() {
+        document.getElementById('chat-screen').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+
+        const birth = new Date(userData.birthDate);
+        document.getElementById('res-today').innerText = new Date().toLocaleDateString('ja-JP');
+        document.getElementById('res-birth').innerText = birth.toLocaleDateString('ja-JP');
+
+        const periods = [
+            calculatePeriod1(birth),
+            calculatePeriod2(birth),
+            calculatePeriod3(birth)
+        ];
+
+        renderPeriodCards(periods);
+        calculateTotal(periods);
+        generateAdvice(periods);
+        renderSubsidyCards(birth);
+        renderTimeline(birth, periods);
+        renderIkukyuReference(birth);
+    }
+
+    function calculatePeriod1(birth) {
+        const costs = {
+            '妊婦健診（14回）': COST.PRENATAL_CHECKUP,
+            '分娩・入院費用': userData.painlessDelivery ? COST.DELIVERY_NORMAL + COST.DELIVERY_PAINLESS_ADD : COST.DELIVERY_NORMAL,
+            'ベビー用品初期費用': COST.BABY_INITIAL
+        };
+
+        const supports = {
+            '出産育児一時金': SUBSIDY.LUMP_SUM,
+            '妊婦健診助成': SUBSIDY.CHECKUP,
+            '出産応援ギフト': SUBSIDY.PREGNANCY_GIFT,
+            '子育て応援ギフト': SUBSIDY.BIRTH_GIFT
+        };
+
+        if (birth.getFullYear() >= 2025 && birth.getMonth() >= 3) {
+            supports['妊婦のための支援給付'] = SUBSIDY.PREGNANCY_SUPPORT;
+        }
+
+        if (userData.painlessDelivery && birth.getFullYear() >= 2025 && birth.getMonth() >= 9) {
+            supports['無痛分娩費用助成'] = SUBSIDY.PAINLESS_SUBSIDY;
+        }
+
+        // パパ育休給付金は収入減の補填なので、補助金計算には含めない
+
+        const totalCost = Object.values(costs).reduce((a, b) => a + b, 0);
+        const totalSupport = Object.values(supports).reduce((a, b) => a + b, 0);
+
+        return {
+            title: '妊娠～出産まで',
+            subtitle: '妊娠判明から出産後1ヶ月まで',
+            costs,
+            supports,
+            totalCost,
+            totalSupport,
+            net: totalCost - totalSupport
+        };
+    }
+
+    function calculatePeriod2(birth) {
+        const costs = {
+            '消耗品（おむつ・ミルク等）': COST.CONSUMABLES_MONTHLY * 12,
+            '衣類': COST.CLOTHES_MONTHLY * 12,
+            '医療費自己負担': COST.MEDICAL_MONTHLY * 12
+        };
+
+        if (userData.needNursery) {
+            const freeMonths = birth.getFullYear() >= 2025 && birth.getMonth() >= 8 ? 4 : 0;
+            const paidMonths = 12 - freeMonths;
+            costs['保育料（0〜2歳）'] = COST.NURSERY_0TO2_MONTHLY * paidMonths;
+        }
+
+        const jidouMonthly = userData.childOrder >= 3 ? SUBSIDY.JIDO_0TO3_3RD : SUBSIDY.JIDO_0TO3_1ST;
+        const supports = {
+            '児童手当': jidouMonthly * 12,
+            '018サポート': SUBSIDY.SUPPORT_018 * 12
+        };
+
+        const totalCost = Object.values(costs).reduce((a, b) => a + b, 0);
+        const totalSupport = Object.values(supports).reduce((a, b) => a + b, 0);
+
+        return {
+            title: '産後～1年目',
+            subtitle: '0歳（生後1ヶ月〜12ヶ月）',
+            costs,
+            supports,
+            totalCost,
+            totalSupport,
+            net: totalCost - totalSupport
+        };
+    }
+
+    function calculatePeriod3(birth) {
+        const costs = {
+            '消耗品': COST.CONSUMABLES_Y2_MONTHLY * 12,
+            '衣類': COST.CLOTHES_MONTHLY * 12,
+            '医療費自己負担': COST.MEDICAL_MONTHLY * 12,
+            'おもちゃ・教育費': COST.TOYS_EDUCATION * 12
+        };
+
+        if (userData.needNursery && userData.childOrder === 1) {
+            costs['保育料（第1子無償化後）'] = 0;
+        } else if (userData.needNursery) {
+            costs['保育料'] = COST.NURSERY_0TO2_MONTHLY * 12;
+        }
+
+        const jidouMonthly = userData.childOrder >= 3 ? SUBSIDY.JIDO_0TO3_3RD : SUBSIDY.JIDO_0TO3_1ST;
+        const supports = {
+            '児童手当': jidouMonthly * 12,
+            '018サポート': SUBSIDY.SUPPORT_018 * 12
+        };
+
+        const totalCost = Object.values(costs).reduce((a, b) => a + b, 0);
+        const totalSupport = Object.values(supports).reduce((a, b) => a + b, 0);
+
+        return {
+            title: '2年目',
+            subtitle: '1歳（13ヶ月〜24ヶ月）',
+            costs,
+            supports,
+            totalCost,
+            totalSupport,
+            net: totalCost - totalSupport
+        };
+    }
+
+    function renderPeriodCards(periods) {
+        const container = document.getElementById('period-cards');
+        container.innerHTML = '';
+
+        periods.forEach((period, index) => {
+            const card = document.createElement('div');
+            card.className = 'period-card';
+
+            const netClass = period.net >= 0 ? 'positive' : 'negative';
+            const netSign = period.net >= 0 ? '' : '+';
+
+            card.innerHTML = `
+                <div class="period-header">
+                    <div class="period-title">${period.title}</div>
+                    <div class="period-subtitle">${period.subtitle}</div>
+                </div>
+
+                <div class="net-amount-box">
+                    <div class="net-label">💰 実質負担額</div>
+                    <div class="net-amount ${netClass}">${netSign}¥${Math.abs(period.net).toLocaleString()}</div>
+                </div>
+
+                <div class="summary-row">
+                    <div class="summary-item">
+                        <div class="summary-item-label">子育て費用</div>
+                        <div class="summary-item-amount cost">¥${period.totalCost.toLocaleString()}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-item-label">補助金・給付金</div>
+                        <div class="summary-item-amount support">¥${period.totalSupport.toLocaleString()}</div>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <button class="detail-toggle" onclick="toggleDetail(${index})">
+                        <span>📋 詳細内訳を見る</span>
+                        <span id="arrow-${index}">▼</span>
+                    </button>
+                    <div class="detail-content" id="detail-${index}">
+                        <h4 style="margin: 0 0 10px 0; color: var(--cost-red); font-size: clamp(10pt, 2.8vw, 12pt);">💸 費用の内訳</h4>
+                        ${Object.entries(period.costs).map(([name, amount]) => `
+                            <div class="detail-item">
+                                <span class="detail-name">${name}</span>
+                                <span class="detail-amount cost">-¥${amount.toLocaleString()}</span>
+                            </div>
+                        `).join('')}
+
+                        <h4 style="margin: 20px 0 10px 0; color: var(--support-green); font-size: clamp(10pt, 2.8vw, 12pt);">💰 補助金・給付金の内訳</h4>
+                        ${Object.entries(period.supports).map(([name, amount]) => `
+                            <div class="detail-item">
+                                <span class="detail-name">${name}</span>
+                                <span class="detail-amount support">+¥${amount.toLocaleString()}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    function toggleDetail(index) {
+        const content = document.getElementById(`detail-${index}`);
+        const arrow = document.getElementById(`arrow-${index}`);
+        
+        if (content.classList.contains('active')) {
+            content.classList.remove('active');
+            arrow.textContent = '▼';
+        } else {
+            content.classList.add('active');
+            arrow.textContent = '▲';
+        }
+    }
+
+    function calculateTotal(periods) {
+        const totalCost = periods.reduce((sum, p) => sum + p.totalCost, 0);
+        const totalSupport = periods.reduce((sum, p) => sum + p.totalSupport, 0);
+        const totalNet = totalCost - totalSupport;
+
+        document.getElementById('total-cost-sum').textContent = '¥' + totalCost.toLocaleString();
+        document.getElementById('total-support-sum').textContent = '¥' + totalSupport.toLocaleString();
+        document.getElementById('total-net').textContent = (totalNet >= 0 ? '' : '+') + '¥' + Math.abs(totalNet).toLocaleString();
+        document.getElementById('total-net').style.color = totalNet >= 0 ? 'var(--cost-red)' : 'var(--support-green)';
+    }
+
+    function generateAdvice(periods) {
+        const totalNet = periods.reduce((sum, p) => sum + p.net, 0);
+        const totalCost = periods.reduce((sum, p) => sum + p.totalCost, 0);
+        const totalSupport = periods.reduce((sum, p) => sum + p.totalSupport, 0);
+
+        let advice = '<strong>現実的な計算結果だニャ！</strong><br><br>';
+
+        if (totalNet <= 0) {
+            advice += `素晴らしいニャ！補助金だけで子育て費用をカバーできて、<strong style="color:var(--support-green);">約${Math.round(Math.abs(totalNet)/10000)}万円</strong>の余裕があるニャ！<br><br>`;
+        } else {
+            advice += `2年間の実質負担額は<strong style="color:var(--cost-red);">約${Math.round(totalNet/10000)}万円</strong>だニャ。<br><br>`;
+        }
+
+        advice += '💡 <strong>ポイント：</strong><br>';
+        advice += `・子育て費用総額：約${Math.round(totalCost/10000)}万円<br>`;
+        advice += `・補助金・給付金：約${Math.round(totalSupport/10000)}万円<br>`;
+        
+        if (userData.needNursery) {
+            advice += '・保育料は第1子でも2025年9月から無償化ニャ！<br>';
+        }
+        
+        if (userData.papaIkukyu && userData.papaIkukyuDays >= 14) {
+            advice += '・パパ育休14日以上で実質手取り10割の給付金ニャ！<br>';
+        }
+        
+        advice += '・児童手当と018サポートで毎月2万円の支援があるニャ<br>';
+
+        document.getElementById('advice-text').innerHTML = advice;
+    }
+
+    function renderSubsidyCards(birth) {
+        const container = document.getElementById('subsidy-cards');
+        container.innerHTML = '';
+
+        SUBSIDY_INFO.forEach(info => {
+            const card = document.createElement('div');
+            card.className = 'subsidy-card';
+            card.onclick = () => openModal(info);
+
+            card.innerHTML = `
+                <div class="subsidy-card-header">
+                    <div class="subsidy-card-title">${info.title}</div>
+                    <div class="subsidy-card-amount">${info.amount}</div>
+                </div>
+                <div class="subsidy-card-desc">${info.desc}</div>
+                <div class="subsidy-card-footer">タップで詳細表示</div>
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    function openModal(info) {
+        const modal = document.getElementById('modal');
+        const body = document.getElementById('modal-body');
+
+        body.innerHTML = `
+            <div class="modal-title">${info.title}</div>
+            <div class="modal-amount">${info.amount}</div>
+
+            <div class="modal-section">
+                <div class="modal-section-title">📝 概要</div>
+                <div class="modal-section-content">${info.desc}</div>
+            </div>
+
+            <div class="modal-section">
+                <div class="modal-section-title">📅 いつ申請する？</div>
+                <div class="modal-section-content">${info.when}</div>
+            </div>
+
+            <div class="modal-section">
+                <div class="modal-section-title">📍 どこで申請する？</div>
+                <div class="modal-section-content">${info.where}</div>
+            </div>
+
+            <div class="modal-section">
+                <div class="modal-section-title">✍️ どうやって申請する？</div>
+                <div class="modal-section-content">${info.how}</div>
+            </div>
+
+            <div class="modal-section">
+                <div class="modal-section-title">✅ 対象者</div>
+                <div class="modal-section-content">${info.eligible}</div>
+            </div>
+
+            <a href="${info.link}" target="_blank" class="modal-link">公式サイトで詳細を見る →</a>
+        `;
+
+        modal.classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('modal').classList.remove('active');
+    }
+
+    function renderTimeline(birth, periods) {
+        const container = document.getElementById('timeline');
+        
+        const events = [
+            {
+                date: '妊娠判明',
+                title: '妊婦健診スタート',
+                desc: '母子手帳の交付を受け、妊婦健診受診票をもらいましょう。14回分の健診費用が助成されます。',
+                amount: '+約20万円'
+            },
+            {
+                date: '妊娠届出時',
+                title: '出産応援ギフト',
+                desc: '面談後、赤ちゃんファーストカード5万円分が支給されます。',
+                amount: '+5万円'
+            },
+            {
+                date: '出産',
+                title: '出産育児一時金',
+                desc: '出産費用として50万円が病院に直接支払われます（直接支払制度利用時）。',
+                amount: '+50万円'
+            },
+            {
+                date: '出生届提出後',
+                title: '子育て応援ギフト・児童手当申請',
+                desc: '面談後、10万円分のカードが支給。児童手当の申請も同時に行いましょう。',
+                amount: '+10万円'
+            },
+            {
+                date: '生後2ヶ月',
+                title: '児童手当・018サポート支給開始',
+                desc: '毎月、児童手当（1.5万円）＋018サポート（0.5万円）＝計2万円が振り込まれます。',
+                amount: '+月2万円'
+            }
+        ];
+
+        if (userData.papaIkukyu && userData.papaIkukyuDays > 0) {
+            events.push({
+                date: '産後8週間以内',
+                title: 'パパ育休給付金',
+                desc: `パパが${userData.papaIkukyuDays}日間の育休を取得。給付金＋出生後休業支援給付金で実質手取り10割！`,
+                amount: '+約' + Math.round((userData.papaIncome / 30) * Math.min(userData.papaIkukyuDays, 28) / 10000) + '万円'
+            });
+        }
+
+        events.push(
+            {
+                date: '1歳',
+                title: '1歳の誕生日',
+                desc: '引き続き児童手当と018サポートで毎月2万円の支援が継続されます。',
+                amount: '+月2万円'
+            },
+            {
+                date: '2025年9月〜',
+                title: '第1子保育料無償化',
+                desc: '東京都独自の制度で、0〜2歳の第1子保育料も無償化されます（条件付き）。',
+                amount: '+月3万円相当'
+            },
+            {
+                date: '2歳',
+                title: '2歳の誕生日',
+                desc: 'このシミュレーションはここまで。3歳以降も児童手当等の支援は続きます。',
+                amount: ''
+            }
+        );
+
+        container.innerHTML = events.map(e => `
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-date">${e.date}</div>
+                    <div class="timeline-title">${e.title}</div>
+                    <div class="timeline-desc">${e.desc}</div>
+                    ${e.amount ? `<div class="timeline-amount">${e.amount}</div>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+
+    // v7追加: 出産手当金の計算（ママのみ、会社員のみ）
+    function calculateMaternityAllowance(monthlyIncome) {
+        if (!userData.mamaIsEmployee || !monthlyIncome) return null;
+        
+        const dailyWage = monthlyIncome / 30;
+        const days = 98; // 産前42日 + 産後56日
+        const amount = Math.floor(dailyWage * (2/3) * days);
+        
+        return {
+            amount: amount,
+            dailyWage: Math.floor(dailyWage),
+            days: days,
+            period: '産前42日＋産後56日',
+            timing: '産後57日目以降に申請 → 約1〜2ヶ月後に振込'
+        };
+    }
+    
+    // v7追加: ママの育児休業給付金計算
+    function calculateMamaIkukyuBenefit(monthlyIncome, ikukyuMonths) {
+        if (!userData.mamaIsEmployee || !userData.mamaIkukyu || !monthlyIncome || !ikukyuMonths) {
+            return null;
+        }
+        
+        const dailyWage = monthlyIncome / 30;
+        const totalDays = ikukyuMonths * 30;
+        
+        // 180日まで67%
+        const days180 = Math.min(totalDays, 180);
+        const benefit180 = Math.floor(dailyWage * 0.67 * days180);
+        
+        // 181日以降50%
+        const daysAfter180 = Math.max(0, totalDays - 180);
+        const benefitAfter180 = Math.floor(dailyWage * 0.50 * daysAfter180);
+        
+        const totalBenefit = benefit180 + benefitAfter180;
+        
+        return {
+            amount: totalBenefit,
+            dailyWage: Math.floor(dailyWage),
+            benefit180: benefit180,
+            benefitAfter180: benefitAfter180,
+            days180: days180,
+            daysAfter180: daysAfter180,
+            months: ikukyuMonths,
+            timing: '初回: 育休開始から2.5〜3ヶ月後、以降2ヶ月ごとに振込'
+        };
+    }
+
+    function renderIkukyuReference(birth) {
+        const container = document.getElementById('ikukyu-reference');
+        const cardsContainer = document.getElementById('ikukyu-cards');
+        
+        // v7修正: パパまたはママが育休を取る場合のみ表示
+        const hasMamaAllowance = userData.mamaIsEmployee && userData.mamaMonthlySalary > 0;
+        const hasMamaBenefit = userData.mamaIsEmployee && userData.mamaIkukyu && userData.mamaMonthlySalary > 0;
+        const hasPapaBenefit = userData.papaIsEmployee && userData.papaIkukyu && userData.papaIncome > 0;
+        
+        if (!hasMamaAllowance && !hasMamaBenefit && !hasPapaBenefit) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+        const cards = [];
+
+        // v7追加: ママの出産手当金
+        const maternityAllowance = calculateMaternityAllowance(userData.mamaMonthlySalary);
+        if (maternityAllowance) {
+            cards.push({
+                type: 'mama-maternity',
+                title: '👩 ママの出産手当金',
+                amount: `約¥${Math.round(maternityAllowance.amount/10000)}万円`,
+                desc: `産休${maternityAllowance.days}日間に受けられる給付金。会社の健康保険から支給されます。`,
+                detail: `<strong>計算内訳：</strong><br>
+                    日給：¥${maternityAllowance.dailyWage.toLocaleString()} (月収 ${userData.mamaMonthlySalary.toLocaleString()}円 ÷ 30日)<br>
+                    日額の2/3 × ${maternityAllowance.days}日 = <strong>¥${maternityAllowance.amount.toLocaleString()}</strong><br>
+                    <br>
+                    📅 ${maternityAllowance.timing}`,
+                note: '※ 産休中の収入補填として支給されます。社会保険料免除・非課税のため、手取りベースで約100%の補償です。'
+            });
+        }
+        
+        // v7追加: ママの育休給付金
+        const mamaIkukyuBenefit = calculateMamaIkukyuBenefit(userData.mamaMonthlySalary, userData.mamaIkukyuMonths);
+        if (mamaIkukyuBenefit) {
+            let detail = `<strong>計算内訳：</strong><br>
+                日給：¥${mamaIkukyuBenefit.dailyWage.toLocaleString()} (月収 ${userData.mamaMonthlySalary.toLocaleString()}円 ÷ 30日)<br><br>`;
+            
+            if (mamaIkukyuBenefit.days180 > 0) {
+                detail += `<strong>【最初の180日間（67%）】</strong><br>
+                    ¥${mamaIkukyuBenefit.dailyWage.toLocaleString()} × 0.67 × ${mamaIkukyuBenefit.days180}日 = <strong>¥${mamaIkukyuBenefit.benefit180.toLocaleString()}</strong><br>`;
+            }
+            
+            if (mamaIkukyuBenefit.daysAfter180 > 0) {
+                detail += `<br><strong>【181日目以降（50%）】</strong><br>
+                    ¥${mamaIkukyuBenefit.dailyWage.toLocaleString()} × 0.50 × ${mamaIkukyuBenefit.daysAfter180}日 = <strong>¥${mamaIkukyuBenefit.benefitAfter180.toLocaleString()}</strong><br>`;
+            }
+            
+            detail += `<br><strong style="color: var(--accent-blue); font-size: 1.1em;">合計：¥${mamaIkukyuBenefit.amount.toLocaleString()}</strong><br>
+                <br>
+                📅 ${mamaIkukyuBenefit.timing}`;
+            
+            cards.push({
+                type: 'mama-ikukyu',
+                title: '👩 ママの育休給付金',
+                amount: `約¥${Math.round(mamaIkukyuBenefit.amount/10000)}万円`,
+                desc: `育休${mamaIkukyuBenefit.months}ヶ月間に受けられる給付金。雇用保険から支給されます。`,
+                detail: detail,
+                note: '※ 育休中の収入補填として支給されます。非課税のため、手取りベースで実質的な補償です。'
+            });
+        }
+        
+        // パパ育休給付金の計算
+        if (userData.papaIkukyu && userData.papaIkukyuDays > 0 && userData.papaIncome > 0) {
+            const days = Math.min(userData.papaIkukyuDays, 28);
+            const dailyWage = userData.papaIncome / 30;
+            const basicBenefit = Math.floor(dailyWage * 0.67 * days);
+            
+            let papaTotal = basicBenefit;
+            let detail = `<strong>計算内訳：</strong><br>
+                日給：¥${Math.floor(dailyWage).toLocaleString()} (月収 ${userData.papaIncome.toLocaleString()}円 ÷ 30日)<br>
+                基本給付 (67%)：¥${Math.floor(dailyWage).toLocaleString()} × 0.67 × ${days}日 = <strong>¥${basicBenefit.toLocaleString()}</strong>`;
+
+            // 出生後休業支援給付金（14日以上で追加）
+            if (userData.papaIkukyuDays >= 14 && birth.getFullYear() >= 2025 && birth.getMonth() >= 3) {
+                const supportBenefit = Math.floor(dailyWage * 0.33 * days);
+                papaTotal += supportBenefit;
+                detail += `<br>出生後休業支援給付金 (33%)：¥${Math.floor(dailyWage).toLocaleString()} × 0.33 × ${days}日 = <strong>¥${supportBenefit.toLocaleString()}</strong><br><br>
+                    <strong style="color: var(--accent-blue); font-size: 1.1em;">合計：¥${papaTotal.toLocaleString()}</strong> (実質手取り約100%🎉)`;
+            }
+
+            cards.push({
+                title: '👨 パパの育休給付金',
+                amount: `約¥${Math.round(papaTotal/10000)}万円`,
+                desc: `${days}日間の育休取得で受けられる給付金。収入減の補填として支給されます。`,
+                detail: detail,
+                note: '※ これは通常の給与（約¥' + Math.round(userData.papaIncome * days / 30 / 10000) + '万円）の代わりに支給されるため、実質的な収入増ではありません。'
+            });
+        }
+
+        // カードをレンダリング
+        cardsContainer.innerHTML = cards.map(card => `
+            <div class="subsidy-card" style="border-left-color: #2196f3; cursor: default;">
+                <div class="subsidy-card-badge" style="background: #2196f3;">💼 育休給付金（参考）</div>
+                <div class="subsidy-card-header">
+                    <div class="subsidy-card-title">${card.title}</div>
+                    <div class="subsidy-card-amount" style="color: #2196f3;">${card.amount}</div>
+                </div>
+                <div class="subsidy-card-desc">${card.desc}</div>
+                <div style="margin-top: 15px; padding: 15px; background: #f5f5f5; border-radius: 10px; font-size: clamp(8.5pt, 2.3vw, 10pt); line-height: 1.7;">
+                    ${card.detail}
+                </div>
+                <div style="margin-top: 10px; font-size: clamp(8pt, 2.2vw, 9pt); color: #999; font-style: italic;">
+                    ${card.note}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function downloadPDF() {
+        const button = event.target;
+        button.textContent = '生成中...';
+        button.disabled = true;
+
+        try {
+            const element = document.querySelector('.wrapper');
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff'
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            
+            const imgWidth = 210;
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= 297;
+
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= 297;
+            }
+
+            pdf.save('子育て費用シミュレーション結果.pdf');
+        } catch (error) {
+            alert('PDF生成に失敗しました: ' + error.message);
+        } finally {
+            button.textContent = '📄 PDF保存';
+            button.disabled = false;
+        }
+    }
+
+    function shareResult() {
+        const url = window.location.href;
+        const text = `育児ネコで子育て費用をシミュレーションしました！\n出産予定日: ${userData.birthDate}\n\n#育児ネコ #子育て費用 #町田市`;
+
+        if (navigator.share) {
+            navigator.share({
+                title: '育児ネコ - 子育て費用シミュレーション',
+                text: text,
+                url: url
+            }).catch(() => {});
+        } else {
+            // フォールバック: URLをコピー
+            navigator.clipboard.writeText(url).then(() => {
+                alert('URLをコピーしました！');
+            });
+        }
+    }
+
+    function restartCalc() {
+        location.reload();
+    }
+
+    // モーダル外クリックで閉じる
+    document.getElementById('modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+
+
+// ========== ハンバーガーメニュー制御 ==========
+function openSideMenu() {
+  document.getElementById('sideMenu').classList.add('open');
+  document.getElementById('menuOverlay').classList.add('show');
+}
+
+function closeSideMenu() {
+  document.getElementById('sideMenu').classList.remove('open');
+  document.getElementById('menuOverlay').classList.remove('show');
+}
+
+document.getElementById('hamburgerBtn').addEventListener('click', openSideMenu);
+document.getElementById('menuCloseBtn').addEventListener('click', closeSideMenu);
+document.getElementById('menuOverlay').addEventListener('click', closeSideMenu);
+
+// ========== 補助金一覧ページ表示 ==========
+function showSubsidyList() {
+  closeSideMenu();
+  // 結果ビューを表示（補助金カードが含まれている）
+  document.getElementById('chatView').style.display = 'none';
+  document.getElementById('resultView').style.display = 'block';
+  
+  // スクロールして補助金カードセクションへ
+  setTimeout(() => {
+    const subsidySection = document.querySelector('.card-grid');
+    if (subsidySection) {
+      subsidySection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, 100);
+}
+
+// ========== Todoリストページ表示（仮実装） ==========
+function showTodoPage(pageType) {
+  closeSideMenu();
+  alert('Todoリスト「' + pageType + '」ページは次のPhaseで実装します');
+}
+
+// ========== 給付金ガイドページ表示（仮実装） ==========
+function showBenefitGuide() {
+  closeSideMenu();
+  alert('育休・産休給付金ガイドは次のPhaseで実装します');
+}
+
+
+// Todoリストのデータ定義
+const TODO_DATA = {
+  pregnancy_confirm: {
+    title: '妊娠時のtodoリスト',
+    subtitle: '妊娠が分かったらすぐにやること',
+    icon: '🤰',
+    todos: [
+      {
+        timing: '妊娠判明後すぐ',
+        task: '産婦人科を受診',
+        where: '産婦人科・クリニック',
+        documents: ['健康保険証', '身分証明書'],
+        notes: '妊娠検査薬で陽性が出たら、できるだけ早く受診しましょう',
+        links: []
+      },
+      {
+        timing: '妊娠8週まで',
+        task: '妊娠届出・母子健康手帳の交付',
+        where: '町田市保健所または地域担当窓口',
+        documents: ['妊娠届出書（病院でもらう）', '本人確認書類', 'マイナンバーカードor通知カード'],
+        notes: '妊婦健診の助成券もこのとき交付されます',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/ninshin/ninshin_todokede.html']
+      },
+      {
+        timing: '妊娠判明後1週間以内',
+        task: '会社への妊娠報告',
+        where: '勤務先（上司・人事部）',
+        documents: [],
+        notes: 'つわりや体調不良に備え、早めの報告が大切です',
+        links: []
+      },
+      {
+        timing: '妊娠初期',
+        task: '出産予定日の確認',
+        where: '産婦人科',
+        documents: [],
+        notes: '出産予定日により各種手続きのスケジュールが決まります',
+        links: []
+      },
+      {
+        timing: '妊娠初期',
+        task: '出産・育児にかかる費用の確認',
+        where: '自宅',
+        documents: [],
+        notes: '育児ネコの計算機で概算を確認しましょう',
+        links: []
+      },
+      {
+        timing: '妊娠初期',
+        task: '妊娠中の生活・食事の見直し',
+        where: '自宅',
+        documents: [],
+        notes: '葉酸サプリの摂取、アルコール・タバコの禁止など',
+        links: []
+      }
+    ]
+  },
+  
+  pregnancy: {
+    title: '妊娠中のtodoリスト',
+    subtitle: '妊娠中期〜後期にやること',
+    icon: '👶',
+    todos: [
+      {
+        timing: '妊娠20週〜24週',
+        task: '出産する病院の決定',
+        where: '産婦人科・産院',
+        documents: ['母子健康手帳', '健康保険証'],
+        notes: '人気の病院は早めに予約が必要です',
+        links: []
+      },
+      {
+        timing: '妊娠20週〜28週',
+        task: '出産・子育て応援ギフト（妊婦面談）',
+        where: '町田市保健所または地域担当窓口',
+        documents: ['母子健康手帳', '本人確認書類', '振込口座がわかるもの'],
+        notes: '面談後、5万円分のギフト（電子クーポンor現金）が支給されます',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/ninshin/oen-gift.html']
+      },
+      {
+        timing: '妊娠中期〜後期',
+        task: '定期妊婦健診の受診',
+        where: '産婦人科',
+        documents: ['母子健康手帳', '妊婦健診補助券', '健康保険証'],
+        notes: '町田市では約28万円分の健診費用助成があります',
+        links: []
+      },
+      {
+        timing: '妊娠24週〜28週',
+        task: '両親学級・母親学級の参加検討',
+        where: '町田市保健所・産院など',
+        documents: ['母子健康手帳'],
+        notes: '出産・育児の知識を学べます',
+        links: []
+      },
+      {
+        timing: '妊娠28週まで',
+        task: '出生前診断の検討（希望者のみ）',
+        where: '産婦人科',
+        documents: [],
+        notes: '希望する場合は医師と相談',
+        links: []
+      },
+      {
+        timing: '妊娠中期〜後期',
+        task: '育児用品の準備開始',
+        where: '自宅・店舗・オンライン',
+        documents: [],
+        notes: 'ベビーベッド、ベビー服、おむつなど',
+        links: []
+      },
+      {
+        timing: '妊娠後期',
+        task: '里帰り出産の準備（該当者のみ）',
+        where: '実家・里帰り先の産院',
+        documents: ['母子健康手帳', '健康保険証', '妊婦健診の記録'],
+        notes: '里帰り先の産院への転院手続きも必要',
+        links: []
+      }
+    ]
+  },
+  
+  before_birth: {
+    title: '出産前のtodoリスト',
+    subtitle: '出産予定日の1〜2ヶ月前にやること',
+    icon: '🏥',
+    todos: [
+      {
+        timing: '出産予定日の1ヶ月前',
+        task: '産休の申請（ママ・会社員の場合）',
+        where: '勤務先（人事部）',
+        documents: ['産前産後休業申請書（会社指定の書式）'],
+        notes: '産前6週間（多胎妊娠は14週間）から取得可能',
+        links: []
+      },
+      {
+        timing: '出産予定日の1ヶ月前',
+        task: '育休の申請（ママ・会社員の場合）',
+        where: '勤務先（人事部）',
+        documents: ['育児休業申出書（会社指定の書式）'],
+        notes: '産休終了後から最長2年間取得可能',
+        links: []
+      },
+      {
+        timing: '出産予定日の1ヶ月前',
+        task: '入院準備・バッグのパッキング',
+        where: '自宅',
+        documents: [],
+        notes: '母子健康手帳、健康保険証、診察券、入院着、洗面用具など',
+        links: []
+      },
+      {
+        timing: '出産予定日の2週間前',
+        task: '陣痛タクシー・緊急連絡先の登録',
+        where: '自宅',
+        documents: [],
+        notes: '深夜・早朝の陣痛に備えて登録しておきましょう',
+        links: []
+      },
+      {
+        timing: '出産前',
+        task: 'ベビーベッド・ベビー服の最終確認',
+        where: '自宅',
+        documents: [],
+        notes: '退院後すぐに使うものを優先的に準備',
+        links: []
+      },
+      {
+        timing: '出産前',
+        task: '家族・親族への連絡体制の確認',
+        where: '自宅',
+        documents: [],
+        notes: '出産時の連絡先リストを作成',
+        links: []
+      },
+      {
+        timing: '出産予定日の1〜2週間前',
+        task: 'パパの育休申請（希望する場合）',
+        where: '勤務先（人事部）',
+        documents: ['育児休業申出書（会社指定の書式）'],
+        notes: '出生後8週間以内に最大28日間の産後パパ育休を取得可能',
+        links: []
+      }
+    ]
+  },
+  
+  after_birth: {
+    title: '出産後のtodoリスト',
+    subtitle: '出産後14日以内 & 1〜2ヶ月以内にやること',
+    icon: '👶',
+    todos: [
+      {
+        timing: '出生後14日以内',
+        task: '出生届の提出',
+        where: '町田市役所 市民課または各市民センター',
+        documents: ['出生届（病院でもらう）', '母子健康手帳', '届出人の本人確認書類・印鑑'],
+        notes: '出生地・本籍地・住所地のいずれかで提出可',
+        links: ['https://www.city.machida.tokyo.jp/shisei/koseki/todokede/shussho.html']
+      },
+      {
+        timing: '出生後14日以内',
+        task: '健康保険への加入',
+        where: '勤務先（健康保険組合）or 町田市役所（国民健康保険）',
+        documents: ['出生届の記載事項証明書or母子健康手帳', '健康保険証', '印鑑'],
+        notes: '赤ちゃんの健康保険証を早めに取得',
+        links: []
+      },
+      {
+        timing: '出生後1ヶ月以内',
+        task: '児童手当の申請',
+        where: '町田市役所 子ども総務課または各市民センター',
+        documents: ['児童手当認定請求書', '申請者の健康保険証コピー', '申請者名義の口座番号がわかるもの', '申請者・配偶者のマイナンバーがわかるもの'],
+        notes: '出生日の翌日から15日以内に申請すれば出生月から支給',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/teate/jidouteate/jidouteate_moushikomi.html']
+      },
+      {
+        timing: '出生後1ヶ月以内',
+        task: '出産育児一時金の申請',
+        where: '健康保険組合or町田市役所（国民健康保険）',
+        documents: ['出産育児一時金支給申請書', '医療機関の領収書・明細書', '母子健康手帳', '健康保険証', '振込口座がわかるもの'],
+        notes: '1児につき50万円（2023年4月以降）が支給されます',
+        links: []
+      },
+      {
+        timing: '出生後1〜2ヶ月',
+        task: '出産・子育て応援ギフト（新生児面談）',
+        where: '町田市保健所または訪問（こんにちは赤ちゃん訪問）',
+        documents: ['母子健康手帳', '本人確認書類', '振込口座がわかるもの'],
+        notes: '面談後、10万円分のギフト（電子クーポンor現金）が支給されます',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/ninshin/oen-gift.html']
+      },
+      {
+        timing: '産休終了後57日目以降',
+        task: '出産手当金の申請（ママ・会社員の場合）',
+        where: '健康保険組合（会社経由）',
+        documents: ['出産手当金支給申請書（健康保険組合指定）', '出勤簿または賃金台帳のコピー', '医師または助産師の証明', '事業主の証明'],
+        notes: '産前42日+産後56日（計98日分）の約3分の2が支給されます',
+        links: []
+      },
+      {
+        timing: '育休開始から4ヶ月後以降',
+        task: '育児休業給付金の初回申請（ママ・会社員の場合）',
+        where: 'ハローワーク（通常は会社経由）',
+        documents: ['育児休業給付金支給申請書', '母子健康手帳のコピー', '賃金台帳・出勤簿のコピー', '雇用保険被保険者証のコピー'],
+        notes: '最初の180日間は休業開始時賃金の67%、以降50%が2ヶ月ごとに支給されます',
+        links: []
+      },
+      {
+        timing: '出生後8週間以内',
+        task: 'パパの産後パパ育休給付金の申請（会社員の場合）',
+        where: 'ハローワーク（通常は会社経由）',
+        documents: ['出生時育児休業給付金支給申請書', '母子健康手帳のコピー', '賃金台帳・出勤簿のコピー', '雇用保険被保険者証のコピー'],
+        notes: '14日以上取得で手取り10割相当（67%+13%）の給付金',
+        links: []
+      },
+      {
+        timing: '出産後早めに',
+        task: '各種育児サービスへの登録',
+        where: 'オンライン・自宅',
+        documents: [],
+        notes: '町田市の子育てひろば、一時保育、ファミリーサポートなど',
+        links: ['https://kosodate-machida.tokyo.jp/']
+      }
+    ]
+  },
+  
+  year1: {
+    title: '1年目のtodoリスト',
+    subtitle: '生後1ヶ月〜1歳までにやること',
+    icon: '🍼',
+    todos: [
+      {
+        timing: '生後1ヶ月',
+        task: '1ヶ月健診の受診',
+        where: '産婦人科・小児科',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証'],
+        notes: 'ママと赤ちゃん両方の健診があります',
+        links: []
+      },
+      {
+        timing: '生後2ヶ月〜',
+        task: '予防接種のスケジュール確認・接種開始',
+        where: '小児科・保健所',
+        documents: ['母子健康手帳', '予防接種予診票', '健康保険証', '乳幼児医療証'],
+        notes: 'B型肝炎、ロタウイルス、ヒブ、小児用肺炎球菌など複数あります',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/boshi_kenko/yobousesshu/yobousesshu.html']
+      },
+      {
+        timing: '生後3〜4ヶ月',
+        task: '3〜4ヶ月健診',
+        where: '町田市指定医療機関',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証', '受診票（郵送されます）'],
+        notes: '無料健診です',
+        links: []
+      },
+      {
+        timing: '生後6ヶ月頃',
+        task: '離乳食の開始',
+        where: '自宅',
+        documents: [],
+        notes: '5〜6ヶ月頃から開始、少しずつ慣らしていきましょう',
+        links: []
+      },
+      {
+        timing: '生後6ヶ月〜8ヶ月',
+        task: '保育園入園の検討・見学',
+        where: '各保育園・町田市保育課',
+        documents: [],
+        notes: '翌年4月入園希望の場合、秋頃から申込開始',
+        links: ['https://kosodate-machida.tokyo.jp/soshiki/4/3/4/350.html']
+      },
+      {
+        timing: '生後9〜10ヶ月',
+        task: '9〜10ヶ月健診',
+        where: '町田市指定医療機関',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証', '受診票'],
+        notes: '無料健診です',
+        links: []
+      },
+      {
+        timing: '1歳の誕生日前',
+        task: '育児休業の延長手続き（1歳6ヶ月まで延長する場合）',
+        where: '勤務先・ハローワーク',
+        documents: ['保育所入所不承諾通知書など', '育児休業給付金支給申請書（延長用）'],
+        notes: '保育園に入れない等の理由がある場合、最長2歳まで延長可能',
+        links: []
+      },
+      {
+        timing: '1歳の誕生日',
+        task: '1歳のお誕生日祝い',
+        where: '自宅・フォトスタジオなど',
+        documents: [],
+        notes: '一升餅や選び取りなどの伝統行事も',
+        links: []
+      }
+    ]
+  },
+  
+  year2: {
+    title: '2年目のtodoリスト',
+    subtitle: '1歳〜2歳までにやること',
+    icon: '👧',
+    todos: [
+      {
+        timing: '1歳0ヶ月〜',
+        task: '追加の予防接種',
+        where: '小児科',
+        documents: ['母子健康手帳', '予防接種予診票', '健康保険証', '乳幼児医療証'],
+        notes: 'MR（麻疹・風疹）、水痘、おたふくかぜなど',
+        links: []
+      },
+      {
+        timing: '1歳6ヶ月',
+        task: '1歳6ヶ月健診',
+        where: '町田市保健所または指定医療機関',
+        documents: ['母子健康手帳', '健康保険証', '乳幼児医療証', '受診票'],
+        notes: '無料健診です。歯科健診も含まれます',
+        links: []
+      },
+      {
+        timing: '1歳6ヶ月の誕生日前',
+        task: '育児休業の延長手続き（2歳まで延長する場合）',
+        where: '勤務先・ハローワーク',
+        documents: ['保育所入所不承諾通知書など', '育児休業給付金支給申請書（延長用）'],
+        notes: '保育園に入れない等の理由がある場合、2歳まで延長可能',
+        links: []
+      },
+      {
+        timing: '1歳〜2歳',
+        task: '保育園・幼稚園入園の申し込み',
+        where: '町田市保育課・各園',
+        documents: ['保育所入所申込書', '就労証明書', '世帯全員の住民票など'],
+        notes: '4月入園の場合、前年の秋頃に申込',
+        links: ['https://www.city.machida.tokyo.jp/kodomo/hoikuen/hoikuen_index.html']
+      },
+      {
+        timing: '1歳〜2歳',
+        task: '子育てひろば・親子教室の利用',
+        where: '町田市内の子どもセンター・子育てひろばなど',
+        documents: [],
+        notes: '無料で利用できる施設が多数あります',
+        links: ['https://kosodate-machida.tokyo.jp/soshiki/4/2/10/507.html']
+      },
+      {
+        timing: '2歳頃',
+        task: 'イヤイヤ期への対応',
+        where: '自宅・育児相談窓口',
+        documents: [],
+        notes: '個人差がありますが、2歳前後に訪れることが多いです',
+        links: []
+      },
+      {
+        timing: '2歳頃',
+        task: 'トイレトレーニングの開始',
+        where: '自宅',
+        documents: [],
+        notes: '焦らず、子どものペースで進めましょう',
+        links: []
+      },
+      {
+        timing: '2歳の誕生日',
+        task: '2歳のお誕生日祝い',
+        where: '自宅・フォトスタジオなど',
+        documents: [],
+        notes: '成長を記録に残しましょう',
+        links: []
+      },
+      {
+        timing: '2歳〜',
+        task: '職場復帰の準備',
+        where: '勤務先・自宅',
+        documents: [],
+        notes: '復帰日の確認、保育園の慣らし保育、病児保育の登録など',
+        links: []
+      }
+    ]
+  }
+};
+
+
+
+// ========== Todoページ表示 ==========
+function showTodoPage(pageType) {
+  closeSideMenu();
+  
+  const todoData = TODO_DATA[pageType];
+  if (!todoData) {
+    alert('該当のtodoリストが見つかりません');
+    return;
+  }
+  
+  // ヘッダー情報を設定
+  document.getElementById('todoPageIcon').textContent = todoData.icon;
+  document.getElementById('todoPageTitle').textContent = todoData.title;
+  document.getElementById('todoPageSubtitle').textContent = todoData.subtitle;
+  
+  // Todoリストをレンダリング
+  const container = document.getElementById('todoListContainer');
+  container.innerHTML = '';
+  
+  todoData.todos.forEach(todo => {
+    const todoItem = document.createElement('div');
+    todoItem.className = 'todo-item';
+    
+    let html = `
+      <div class="todo-timing">${todo.timing}</div>
+      <div class="todo-task">${todo.task}</div>
+      <div class="todo-detail">
+        <span class="todo-detail-label">📍 提出先:</span>${todo.where}
+      </div>
+    `;
+    
+    if (todo.documents && todo.documents.length > 0) {
+      html += `
+        <div class="todo-documents">
+          <span class="todo-detail-label">📄 必要書類:</span><br>
+          ${todo.documents.map(doc => `・${doc}`).join('<br>')}
+        </div>
+      `;
+    }
+    
+    if (todo.notes) {
+      html += `
+        <div class="todo-notes">
+          <span class="todo-detail-label">💡 メモ:</span> ${todo.notes}
+        </div>
+      `;
+    }
+    
+    if (todo.links && todo.links.length > 0) {
+      html += `
+        <div class="todo-links">
+          ${todo.links.map(link => `<a href="${link}" class="todo-link" target="_blank">詳細を見る</a>`).join('')}
+        </div>
+      `;
+    }
+    
+    todoItem.innerHTML = html;
+    container.appendChild(todoItem);
+  });
+  
+  // チャット画面・結果画面を非表示
+  document.getElementById('chatView').style.display = 'none';
+  document.getElementById('resultView').style.display = 'none';
+  
+  // Todoページを表示
+  document.getElementById('todoPage').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ========== 給付金ガイドページ表示 ==========
+function showBenefitGuide() {
+  closeSideMenu();
+  
+  // チャット画面・結果画面を非表示
+  document.getElementById('chatView').style.display = 'none';
+  document.getElementById('resultView').style.display = 'none';
+  
+  // 給付金ガイドページを表示
+  document.getElementById('benefitGuidePage').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ========== ページを閉じる ==========
+function hidePage() {
+  // すべての情報ページを非表示
+  document.getElementById('todoPage').classList.remove('active');
+  document.getElementById('benefitGuidePage').classList.remove('active');
+  
+  // チャット画面に戻る
+  document.getElementById('chatView').style.display = 'block';
+  document.getElementById('resultView').style.display = 'none';
+  window.scrollTo(0, 0);
+}
+
+</script>
+
+<!-- Todoページ -->
+<div class="info-page" id="todoPage">
+  <button class="back-btn" onclick="hidePage()">← 戻る</button>
+  <div class="info-page-header">
+    <div class="info-page-icon" id="todoPageIcon"></div>
+    <div class="info-page-title" id="todoPageTitle"></div>
+    <div class="info-page-subtitle" id="todoPageSubtitle"></div>
+  </div>
+  <div id="todoListContainer"></div>
+</div>
+
+<!-- 給付金ガイドページ -->
+<div class="info-page" id="benefitGuidePage">
+  <button class="back-btn" onclick="hidePage()">← 戻る</button>
+  <div class="info-page-header">
+    <div class="info-page-icon">💰</div>
+    <div class="info-page-title">育休・産休給付金ガイド</div>
+    <div class="info-page-subtitle">申請フローと給付金の概要</div>
+  </div>
+  
+  <div class="benefit-section">
+    <div class="benefit-section-title">📋 給付金の種類</div>
+    <div class="flow-step">
+      <span class="flow-step-number">1</span>
+      <div class="flow-step-title">出産育児一時金（全員対象）</div>
+      <div class="flow-step-content">
+        <strong>金額:</strong> 50万円（1児につき）<br>
+        <strong>対象:</strong> 健康保険加入者全員<br>
+        <strong>申請先:</strong> 加入している健康保険（協会けんぽ、組合健保、国民健康保険など）<br>
+        <strong>タイミング:</strong> 出産後すぐ〜2年以内
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <span class="flow-step-number">2</span>
+      <div class="flow-step-title">出産手当金（ママ・会社員のみ）</div>
+      <div class="flow-step-content">
+        <strong>金額:</strong> 標準報酬日額の2/3 × 98日分<br>
+        <strong>対象:</strong> 健康保険（協会けんぽ、組合健保）に加入している会社員<br>
+        <strong>申請先:</strong> 加入している健康保険（会社経由）<br>
+        <strong>タイミング:</strong> 産休終了後（出産日の翌日から57日目以降）
+        <div class="calculation-example">
+          <strong>計算例:</strong> 月給25万円の場合<br>
+          標準報酬日額 = 25万円 ÷ 30日 = 8,333円<br>
+          出産手当金 = 8,333円 × 2/3 × 98日 ≒ <strong>54.4万円</strong>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <span class="flow-step-number">3</span>
+      <div class="flow-step-title">育児休業給付金（ママ・パパ・会社員のみ）</div>
+      <div class="flow-step-content">
+        <strong>金額:</strong><br>
+        ・最初の180日間: 休業開始時賃金の<strong>67%</strong><br>
+        ・181日目以降: 休業開始時賃金の<strong>50%</strong><br>
+        <strong>対象:</strong> 雇用保険に加入している会社員<br>
+        <strong>申請先:</strong> ハローワーク（通常は会社経由）<br>
+        <strong>タイミング:</strong> 育休開始から約4ヶ月後に初回支給、以降2ヶ月ごと
+        <div class="calculation-example">
+          <strong>計算例:</strong> 月給25万円、12ヶ月育休の場合<br>
+          最初の6ヶ月: 25万円 × 67% × 6ヶ月 = 100.5万円<br>
+          残り6ヶ月: 25万円 × 50% × 6ヶ月 = 75万円<br>
+          合計: <strong>175.5万円</strong>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <span class="flow-step-number">4</span>
+      <div class="flow-step-title">産後パパ育休給付金（パパ・会社員のみ）</div>
+      <div class="flow-step-content">
+        <strong>金額:</strong> 休業開始時賃金の<strong>67%</strong><br>
+        + 14日以上取得で<strong>+13%</strong>（合計80%、手取り10割相当）<br>
+        <strong>対象:</strong> 雇用保険に加入している会社員の父親<br>
+        <strong>期間:</strong> 子の出生後8週間以内に最大28日間<br>
+        <strong>申請先:</strong> ハローワーク（通常は会社経由）<br>
+        <strong>タイミング:</strong> 産後パパ育休終了後2ヶ月以内
+        <div class="calculation-example">
+          <strong>計算例:</strong> 月給30万円、28日間取得の場合<br>
+          基本給付: 10,000円 × 67% × 28日 = 18.76万円<br>
+          追加給付（14日以上）: 10,000円 × 13% × 28日 = 3.64万円<br>
+          合計: <strong>22.4万円</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="benefit-section">
+    <div class="benefit-section-title">🔄 申請フローチャート（ママ・会社員の場合）</div>
+    <div class="flowchart">
+      <div class="flow-step">
+        <span class="flow-step-number">STEP1</span>
+        <div class="flow-step-title">妊娠判明〜妊娠8週まで</div>
+        <div class="flow-step-content">
+          ✅ 産婦人科を受診<br>
+          ✅ 妊娠届出・母子健康手帳の交付<br>
+          ✅ 会社へ妊娠報告
+        </div>
+      </div>
+      
+      <div class="flow-step">
+        <span class="flow-step-number">STEP2</span>
+        <div class="flow-step-title">出産予定日の1ヶ月前</div>
+        <div class="flow-step-content">
+          ✅ 産休の申請（会社へ）<br>
+          ✅ 育休の申請（会社へ）
+        </div>
+      </div>
+      
+      <div class="flow-step">
+        <span class="flow-step-number">STEP3</span>
+        <div class="flow-step-title">出産（産休開始）</div>
+        <div class="flow-step-content">
+          産前6週間 + 産後8週間 = <strong>計14週間の産休</strong>
+        </div>
+      </div>
+      
+      <div class="flow-step">
+        <span class="flow-step-number">STEP4</span>
+        <div class="flow-step-title">出産後14日以内</div>
+        <div class="flow-step-content">
+          ✅ 出生届の提出（市役所）<br>
+          ✅ 健康保険への加入（会社or市役所）<br>
+          ✅ 出産育児一時金の申請（健康保険へ）<br>
+          → <strong>50万円</strong>支給
+        </div>
+      </div>
+      
+      <div class="flow-step">
+        <span class="flow-step-number">STEP5</span>
+        <div class="flow-step-title">出産後1ヶ月以内</div>
+        <div class="flow-step-content">
+          ✅ 児童手当の申請（市役所）<br>
+          → 月<strong>1.5万円</strong>（第1・2子）支給開始
+        </div>
+      </div>
+      
+      <div class="flow-step">
+        <span class="flow-step-number">STEP6</span>
+        <div class="flow-step-title">産休終了後（出産日の翌日から57日目以降）</div>
+        <div class="flow-step-content">
+          ✅ 出産手当金の申請（健康保険へ、会社経由）<br>
+          → 約1〜2ヶ月後に<strong>約54万円</strong>（月給25万円の場合）支給
+        </div>
+      </div>
+      
+      <div class="flow-step">
+        <span class="flow-step-number">STEP7</span>
+        <div class="flow-step-title">育休開始〜4ヶ月後</div>
+        <div class="flow-step-content">
+          ✅ 育児休業給付金の初回申請（ハローワーク、会社経由）<br>
+          → 以降2ヶ月ごとに支給（最初の180日間は賃金の<strong>67%</strong>、以降<strong>50%</strong>）
+        </div>
+      </div>
+    </div>
+    
+    <div class="warning-box">
+      <strong>⚠️ 注意事項:</strong><br>
+      ・自営業・フリーランスの方は、出産育児一時金のみ対象です<br>
+      ・無職の方（配偶者の扶養に入っている場合）も出産育児一時金のみ対象です<br>
+      ・国民健康保険加入者は出産手当金の対象外です<br>
+      ・パートタイマーの方は、勤務条件により対象・対象外が異なります
+    </div>
+  </div>
+  
+  <div class="benefit-section">
+    <div class="benefit-section-title">🔄 申請フローチャート（パパ・会社員の場合）</div>
+    <div class="flowchart">
+      <div class="flow-step">
+        <span class="flow-step-number">STEP1</span>
+        <div class="flow-step-title">出産予定日の1〜2週間前</div>
+        <div class="flow-step-content">
+          ✅ 産後パパ育休の申請（会社へ）<br>
+          期間: 出生後8週間以内に最大28日間
+        </div>
+      </div>
+      
+      <div class="flow-step">
+        <span class="flow-step-number">STEP2</span>
+        <div class="flow-step-title">出産〜産後パパ育休取得</div>
+        <div class="flow-step-content">
+          <strong>14日以上</strong>取得すると手取り10割相当の給付！
+        </div>
+      </div>
+      
+      <div class="flow-step">
+        <span class="flow-step-number">STEP3</span>
+        <div class="flow-step-title">産後パパ育休終了後2ヶ月以内</div>
+        <div class="flow-step-content">
+          ✅ 産後パパ育休給付金の申請（ハローワーク、会社経由）<br>
+          → 約1〜2ヶ月後に支給
+          <div class="calculation-example">
+            14日以上取得の場合:<br>
+            基本給付（67%）+ 追加給付（13%）= <strong>合計80%</strong>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flow-step">
+        <span class="flow-step-number">STEP4</span>
+        <div class="flow-step-title">（希望する場合）育児休業も取得可能</div>
+        <div class="flow-step-content">
+          産後パパ育休とは別に、通常の育児休業も取得可能<br>
+          → 育児休業給付金が支給されます
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="benefit-section">
+    <div class="benefit-section-title">📄 必要書類チェックリスト</div>
+    
+    <div class="flow-step">
+      <span class="flow-step-number">📌</span>
+      <div class="flow-step-title">出産育児一時金</div>
+      <div class="flow-step-content">
+        ✓ 出産育児一時金支給申請書<br>
+        ✓ 医療機関の領収書・明細書<br>
+        ✓ 母子健康手帳<br>
+        ✓ 健康保険証<br>
+        ✓ 振込口座がわかるもの
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <span class="flow-step-number">📌</span>
+      <div class="flow-step-title">出産手当金</div>
+      <div class="flow-step-content">
+        ✓ 出産手当金支給申請書<br>
+        ✓ 出勤簿または賃金台帳のコピー<br>
+        ✓ 医師または助産師の証明<br>
+        ✓ 事業主の証明
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <span class="flow-step-number">📌</span>
+      <div class="flow-step-title">育児休業給付金</div>
+      <div class="flow-step-content">
+        ✓ 育児休業給付金支給申請書<br>
+        ✓ 母子健康手帳のコピー<br>
+        ✓ 賃金台帳・出勤簿のコピー<br>
+        ✓ 雇用保険被保険者証のコピー
+      </div>
+    </div>
+    
+    <div class="flow-step">
+      <span class="flow-step-number">📌</span>
+      <div class="flow-step-title">産後パパ育休給付金</div>
+      <div class="flow-step-content">
+        ✓ 出生時育児休業給付金支給申請書<br>
+        ✓ 母子健康手帳のコピー<br>
+        ✓ 賃金台帳・出勤簿のコピー<br>
+        ✓ 雇用保険被保険者証のコピー
+      </div>
+    </div>
+  </div>
+  
+  <div class="benefit-section">
+    <div class="benefit-section-title">🔗 参考リンク</div>
+    <div class="todo-links">
+      <a href="https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/0000158500.html" class="todo-link" target="_blank">厚生労働省 育児休業給付</a>
+      <a href="https://www.kyoukaikenpo.or.jp/g2/cat230/r125/" class="todo-link" target="_blank">協会けんぽ 出産手当金</a>
+      <a href="https://www.city.machida.tokyo.jp/kodomo/teate/jidouteate/jidouteate_moushikomi.html" class="todo-link" target="_blank">町田市 児童手当</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
